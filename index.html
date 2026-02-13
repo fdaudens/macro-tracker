@@ -229,6 +229,34 @@ header p{font-size:.8rem;opacity:.8;margin-top:2px}
 .manual-barcode input{flex:1;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:.85rem;font-family:inherit;outline:0}
 .manual-barcode input:focus{border-color:var(--accent)}
 .manual-barcode button{padding:8px 16px;background:var(--accent);color:#fff;border:0;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap}
+
+/* Micronutrient card */
+.micro-card{background:var(--card);border-radius:var(--radius);padding:16px 18px;margin-bottom:14px;box-shadow:var(--shadow)}
+.micro-card h3{font-size:.72rem;text-transform:uppercase;letter-spacing:.6px;color:var(--text3);margin-bottom:12px}
+.micro-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px 10px}
+.micro-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0}
+.micro-name{font-size:.72rem;color:var(--text2)}
+.micro-val{font-size:.75rem;font-weight:600}
+.micro-bar-wrap{height:3px;background:rgba(0,0,0,.06);border-radius:2px;margin-top:2px}
+.micro-bar{height:100%;border-radius:2px;background:var(--accent);transition:width .3s}
+.micro-bar.good{background:var(--green)}
+.micro-bar.over{background:var(--orange)}
+.micro-item{padding:6px 8px;border-radius:8px;background:#fafaf8}
+.micro-item .mi-top{display:flex;justify-content:space-between;align-items:baseline}
+.micro-item .mi-name{font-size:.68rem;color:var(--text3);text-transform:uppercase;letter-spacing:.3px}
+.micro-item .mi-val{font-size:.82rem;font-weight:700}
+.micro-item .mi-goal{font-size:.62rem;color:var(--text3)}
+.micro-note{font-size:.68rem;color:var(--text3);margin-top:10px;font-style:italic}
+
+/* Scan from photo */
+.scan-photo-row{display:flex;gap:8px;margin-top:10px}
+.scan-photo-btn{flex:1;padding:10px;background:var(--accent-light);color:var(--accent);border:1.5px dashed var(--accent);border-radius:10px;font-size:.78rem;font-weight:600;cursor:pointer;font-family:inherit;text-align:center;transition:.2s}
+.scan-photo-btn:hover{background:var(--accent);color:#fff}
+.scan-photo-input{display:none}
+
+@media(max-width:500px){
+  .micro-grid{grid-template-columns:repeat(2,1fr)}
+}
 </style>
 </head>
 <body>
@@ -249,6 +277,7 @@ header p{font-size:.8rem;opacity:.8;margin-top:2px}
   <!-- TRACKER -->
   <div id="tab-tracker">
     <div class="summary" id="summaryCard"></div>
+    <div id="microCard"></div>
     <div id="remainingBanner"></div>
     <div id="mealSections"></div>
   </div>
@@ -305,6 +334,10 @@ header p{font-size:.8rem;opacity:.8;margin-top:2px}
     <div id="scanReader"></div>
     <div id="scanStatus" class="scan-status"></div>
     <div id="scanResult" style="display:none"></div>
+    <div class="scan-photo-row">
+      <label class="scan-photo-btn" for="scanPhotoInput">Scan from photo</label>
+      <input type="file" id="scanPhotoInput" class="scan-photo-input" accept="image/*" capture="environment" onchange="scanFromPhoto(this)">
+    </div>
     <div class="scan-or">or enter manually</div>
     <div class="manual-barcode">
       <input type="text" id="manualBarcode" placeholder="Enter barcode number..." inputmode="numeric">
@@ -321,584 +354,584 @@ header p{font-size:.8rem;opacity:.8;margin-top:2px}
 <script>
 const DB = [
 // ── Meat & Poultry ──
-{name:"Chicken breast",cat:"Meat",cal:165,pro:31,carb:0,fat:3.6,unit:"g",portion:150},
-{name:"Chicken thigh",cat:"Meat",cal:209,pro:26,carb:0,fat:11,unit:"g",portion:150},
-{name:"Chicken drumstick",cat:"Meat",cal:172,pro:28,carb:0,fat:6,unit:"g",portion:120},
-{name:"Chicken wing",cat:"Meat",cal:203,pro:30,carb:0,fat:8,unit:"g",portion:80},
-{name:"Chicken breast grilled",cat:"Meat",cal:165,pro:31,carb:0,fat:3.6,unit:"g",portion:150},
-{name:"Chicken liver",cat:"Meat",cal:167,pro:24,carb:1,fat:7,unit:"g",portion:100},
-{name:"Turkey breast",cat:"Meat",cal:135,pro:30,carb:0,fat:1,unit:"g",portion:150},
-{name:"Turkey ground",cat:"Meat",cal:170,pro:21,carb:0,fat:9,unit:"g",portion:150},
-{name:"Turkey deli sliced",cat:"Meat",cal:104,pro:18,carb:2,fat:2,unit:"g",portion:60},
-{name:"Ground beef 95% lean",cat:"Meat",cal:137,pro:21,carb:0,fat:5,unit:"g",portion:150},
-{name:"Ground beef 85% lean",cat:"Meat",cal:215,pro:19,carb:0,fat:15,unit:"g",portion:150},
-{name:"Ground beef 80% lean",cat:"Meat",cal:254,pro:17,carb:0,fat:20,unit:"g",portion:150},
-{name:"Beef sirloin steak",cat:"Meat",cal:183,pro:26,carb:0,fat:8,unit:"g",portion:180},
-{name:"Beef tenderloin",cat:"Meat",cal:198,pro:26,carb:0,fat:10,unit:"g",portion:170},
-{name:"Beef ribeye steak",cat:"Meat",cal:291,pro:24,carb:0,fat:21,unit:"g",portion:200},
-{name:"Beef flank steak",cat:"Meat",cal:194,pro:27,carb:0,fat:9,unit:"g",portion:170},
-{name:"Beef roast chuck",cat:"Meat",cal:250,pro:26,carb:0,fat:16,unit:"g",portion:150},
-{name:"Beef stew meat",cat:"Meat",cal:175,pro:28,carb:0,fat:6,unit:"g",portion:150},
-{name:"Corned beef",cat:"Meat",cal:251,pro:18,carb:0,fat:19,unit:"g",portion:80},
-{name:"Beef meatballs",cat:"Meat",cal:234,pro:15,carb:7,fat:16,unit:"g",portion:100},
-{name:"Pork tenderloin",cat:"Meat",cal:143,pro:26,carb:0,fat:3.5,unit:"g",portion:150},
-{name:"Pork chop",cat:"Meat",cal:231,pro:25,carb:0,fat:14,unit:"g",portion:150},
-{name:"Pork loin roast",cat:"Meat",cal:193,pro:27,carb:0,fat:9,unit:"g",portion:150},
-{name:"Pork ribs",cat:"Meat",cal:277,pro:20,carb:0,fat:21,unit:"g",portion:150},
-{name:"Pork shoulder",cat:"Meat",cal:269,pro:24,carb:0,fat:19,unit:"g",portion:150},
-{name:"Pork sausage",cat:"Meat",cal:339,pro:13,carb:0,fat:31,unit:"g",portion:80},
-{name:"Bacon",cat:"Meat",cal:541,pro:37,carb:1.4,fat:42,unit:"g",portion:30},
-{name:"Bacon turkey",cat:"Meat",cal:218,pro:18,carb:2,fat:15,unit:"g",portion:30},
-{name:"Ham deli sliced",cat:"Meat",cal:145,pro:21,carb:3,fat:5,unit:"g",portion:60},
-{name:"Ham glazed",cat:"Meat",cal:163,pro:16,carb:7,fat:8,unit:"g",portion:100},
-{name:"Prosciutto",cat:"Meat",cal:270,pro:26,carb:0,fat:18,unit:"g",portion:30},
-{name:"Salami",cat:"Meat",cal:378,pro:22,carb:1,fat:31,unit:"g",portion:30},
-{name:"Pepperoni",cat:"Meat",cal:504,pro:22,carb:3,fat:44,unit:"g",portion:30},
-{name:"Chorizo",cat:"Meat",cal:455,pro:24,carb:2,fat:38,unit:"g",portion:60},
-{name:"Lamb leg",cat:"Meat",cal:162,pro:24,carb:0,fat:7,unit:"g",portion:150},
-{name:"Lamb chops",cat:"Meat",cal:282,pro:26,carb:0,fat:19,unit:"g",portion:120},
-{name:"Lamb ground",cat:"Meat",cal:283,pro:17,carb:0,fat:23,unit:"g",portion:150},
-{name:"Bison ground",cat:"Meat",cal:146,pro:20,carb:0,fat:7,unit:"g",portion:150},
-{name:"Duck breast",cat:"Meat",cal:201,pro:23,carb:0,fat:11,unit:"g",portion:150},
-{name:"Venison",cat:"Meat",cal:158,pro:30,carb:0,fat:3,unit:"g",portion:150},
-{name:"Veal cutlet",cat:"Meat",cal:172,pro:31,carb:0,fat:5,unit:"g",portion:150},
-{name:"Rabbit",cat:"Meat",cal:197,pro:29,carb:0,fat:8,unit:"g",portion:150},
-{name:"Hot dog beef",cat:"Meat",cal:290,pro:10,carb:4,fat:26,unit:"g",portion:57,pcs:"hot dog",pcsW:57},
-{name:"Bratwurst",cat:"Meat",cal:333,pro:14,carb:3,fat:29,unit:"g",portion:85},
-{name:"Italian sausage",cat:"Meat",cal:304,pro:16,carb:2,fat:26,unit:"g",portion:85},
-{name:"Chicken nuggets",cat:"Meat",cal:296,pro:15,carb:18,fat:18,unit:"g",portion:100},
+{name:"Chicken breast",cat:"Meat",cal:165,pro:31,carb:0,fat:3.6,unit:"g",portion:150,fiber:0,sugar:0,sodium:74,iron:0.7,calcium:11,vitC:0,vitD:0.1,potassium:256},
+{name:"Chicken thigh",cat:"Meat",cal:209,pro:26,carb:0,fat:11,unit:"g",portion:150,fiber:0,sugar:0,sodium:84,iron:1.0,calcium:12,vitC:0,vitD:0.2,potassium:222},
+{name:"Chicken drumstick",cat:"Meat",cal:172,pro:28,carb:0,fat:6,unit:"g",portion:120,fiber:0,sugar:0,sodium:76,iron:1.1,calcium:11,vitC:0,vitD:0.1,potassium:230},
+{name:"Chicken wing",cat:"Meat",cal:203,pro:30,carb:0,fat:8,unit:"g",portion:80,fiber:0,sugar:0,sodium:82,iron:1.0,calcium:13,vitC:0,vitD:0.1,potassium:184},
+{name:"Chicken breast grilled",cat:"Meat",cal:165,pro:31,carb:0,fat:3.6,unit:"g",portion:150,fiber:0,sugar:0,sodium:74,iron:0.7,calcium:11,vitC:0,vitD:0.1,potassium:256},
+{name:"Chicken liver",cat:"Meat",cal:167,pro:24,carb:1,fat:7,unit:"g",portion:100,fiber:0,sugar:0,sodium:71,iron:9.0,calcium:8,vitC:18,vitD:0.2,potassium:230},
+{name:"Turkey breast",cat:"Meat",cal:135,pro:30,carb:0,fat:1,unit:"g",portion:150,fiber:0,sugar:0,sodium:50,iron:0.7,calcium:10,vitC:0,vitD:0.1,potassium:270},
+{name:"Turkey ground",cat:"Meat",cal:170,pro:21,carb:0,fat:9,unit:"g",portion:150,fiber:0,sugar:0,sodium:68,iron:1.2,calcium:18,vitC:0,vitD:0.1,potassium:235},
+{name:"Turkey deli sliced",cat:"Meat",cal:104,pro:18,carb:2,fat:2,unit:"g",portion:60,fiber:0,sugar:1.5,sodium:1000,iron:0.6,calcium:10,vitC:0,vitD:0.1,potassium:200},
+{name:"Ground beef 95% lean",cat:"Meat",cal:137,pro:21,carb:0,fat:5,unit:"g",portion:150,fiber:0,sugar:0,sodium:66,iron:2.5,calcium:12,vitC:0,vitD:0.1,potassium:315},
+{name:"Ground beef 85% lean",cat:"Meat",cal:215,pro:19,carb:0,fat:15,unit:"g",portion:150,fiber:0,sugar:0,sodium:72,iron:2.3,calcium:18,vitC:0,vitD:0.1,potassium:295},
+{name:"Ground beef 80% lean",cat:"Meat",cal:254,pro:17,carb:0,fat:20,unit:"g",portion:150,fiber:0,sugar:0,sodium:75,iron:2.1,calcium:20,vitC:0,vitD:0.1,potassium:280},
+{name:"Beef sirloin steak",cat:"Meat",cal:183,pro:26,carb:0,fat:8,unit:"g",portion:180,fiber:0,sugar:0,sodium:56,iron:2.6,calcium:18,vitC:0,vitD:0.1,potassium:330},
+{name:"Beef tenderloin",cat:"Meat",cal:198,pro:26,carb:0,fat:10,unit:"g",portion:170,fiber:0,sugar:0,sodium:54,iron:2.8,calcium:12,vitC:0,vitD:0.1,potassium:340},
+{name:"Beef ribeye steak",cat:"Meat",cal:291,pro:24,carb:0,fat:21,unit:"g",portion:200,fiber:0,sugar:0,sodium:59,iron:2.1,calcium:11,vitC:0,vitD:0.1,potassium:290},
+{name:"Beef flank steak",cat:"Meat",cal:194,pro:27,carb:0,fat:9,unit:"g",portion:170,fiber:0,sugar:0,sodium:57,iron:2.4,calcium:14,vitC:0,vitD:0.1,potassium:350},
+{name:"Beef roast chuck",cat:"Meat",cal:250,pro:26,carb:0,fat:16,unit:"g",portion:150,fiber:0,sugar:0,sodium:60,iron:2.7,calcium:11,vitC:0,vitD:0.1,potassium:280},
+{name:"Beef stew meat",cat:"Meat",cal:175,pro:28,carb:0,fat:6,unit:"g",portion:150,fiber:0,sugar:0,sodium:58,iron:2.5,calcium:12,vitC:0,vitD:0.1,potassium:300},
+{name:"Corned beef",cat:"Meat",cal:251,pro:18,carb:0,fat:19,unit:"g",portion:80,fiber:0,sugar:0,sodium:973,iron:1.9,calcium:8,vitC:0,vitD:0,potassium:145},
+{name:"Beef meatballs",cat:"Meat",cal:234,pro:15,carb:7,fat:16,unit:"g",portion:100,fiber:0.5,sugar:1,sodium:480,iron:1.8,calcium:30,vitC:0,vitD:0.1,potassium:200},
+{name:"Pork tenderloin",cat:"Meat",cal:143,pro:26,carb:0,fat:3.5,unit:"g",portion:150,fiber:0,sugar:0,sodium:55,iron:1.1,calcium:5,vitC:0.6,vitD:0.5,potassium:380},
+{name:"Pork chop",cat:"Meat",cal:231,pro:25,carb:0,fat:14,unit:"g",portion:150,fiber:0,sugar:0,sodium:62,iron:0.9,calcium:19,vitC:0,vitD:0.6,potassium:350},
+{name:"Pork loin roast",cat:"Meat",cal:193,pro:27,carb:0,fat:9,unit:"g",portion:150,fiber:0,sugar:0,sodium:50,iron:0.9,calcium:10,vitC:0,vitD:0.5,potassium:360},
+{name:"Pork ribs",cat:"Meat",cal:277,pro:20,carb:0,fat:21,unit:"g",portion:150,fiber:0,sugar:0,sodium:75,iron:1.0,calcium:22,vitC:0,vitD:0.5,potassium:260},
+{name:"Pork shoulder",cat:"Meat",cal:269,pro:24,carb:0,fat:19,unit:"g",portion:150,fiber:0,sugar:0,sodium:70,iron:1.2,calcium:15,vitC:0,vitD:0.5,potassium:290},
+{name:"Pork sausage",cat:"Meat",cal:339,pro:13,carb:0,fat:31,unit:"g",portion:80,fiber:0,sugar:0,sodium:749,iron:1.5,calcium:13,vitC:0,vitD:0.5,potassium:220},
+{name:"Bacon",cat:"Meat",cal:541,pro:37,carb:1.4,fat:42,unit:"g",portion:30,fiber:0,sugar:0,sodium:1717,iron:0.8,calcium:5,vitC:0,vitD:0.3,potassium:505},
+{name:"Bacon turkey",cat:"Meat",cal:218,pro:18,carb:2,fat:15,unit:"g",portion:30,fiber:0,sugar:0,sodium:1200,iron:0.7,calcium:10,vitC:0,vitD:0.2,potassium:230},
+{name:"Ham deli sliced",cat:"Meat",cal:145,pro:21,carb:3,fat:5,unit:"g",portion:60,fiber:0,sugar:1.5,sodium:1100,iron:0.9,calcium:7,vitC:0,vitD:0.3,potassium:290},
+{name:"Ham glazed",cat:"Meat",cal:163,pro:16,carb:7,fat:8,unit:"g",portion:100,fiber:0,sugar:5,sodium:900,iron:0.9,calcium:7,vitC:0,vitD:0.3,potassium:250},
+{name:"Prosciutto",cat:"Meat",cal:270,pro:26,carb:0,fat:18,unit:"g",portion:30,fiber:0,sugar:0,sodium:1640,iron:0.9,calcium:7,vitC:0,vitD:0,potassium:380},
+{name:"Salami",cat:"Meat",cal:378,pro:22,carb:1,fat:31,unit:"g",portion:30,fiber:0,sugar:0.5,sodium:1740,iron:1.5,calcium:10,vitC:0,vitD:0.3,potassium:378},
+{name:"Pepperoni",cat:"Meat",cal:504,pro:22,carb:3,fat:44,unit:"g",portion:30,fiber:0,sugar:1,sodium:1761,iron:1.6,calcium:10,vitC:0,vitD:0.3,potassium:320},
+{name:"Chorizo",cat:"Meat",cal:455,pro:24,carb:2,fat:38,unit:"g",portion:60,fiber:0,sugar:1,sodium:1235,iron:1.8,calcium:14,vitC:0,vitD:0.5,potassium:400},
+{name:"Lamb leg",cat:"Meat",cal:162,pro:24,carb:0,fat:7,unit:"g",portion:150,fiber:0,sugar:0,sodium:59,iron:1.8,calcium:8,vitC:0,vitD:0.1,potassium:310},
+{name:"Lamb chops",cat:"Meat",cal:282,pro:26,carb:0,fat:19,unit:"g",portion:120,fiber:0,sugar:0,sodium:65,iron:1.6,calcium:17,vitC:0,vitD:0.1,potassium:280},
+{name:"Lamb ground",cat:"Meat",cal:283,pro:17,carb:0,fat:23,unit:"g",portion:150,fiber:0,sugar:0,sodium:67,iron:1.5,calcium:16,vitC:0,vitD:0.1,potassium:270},
+{name:"Bison ground",cat:"Meat",cal:146,pro:20,carb:0,fat:7,unit:"g",portion:150,fiber:0,sugar:0,sodium:54,iron:3.0,calcium:12,vitC:0,vitD:0,potassium:325},
+{name:"Duck breast",cat:"Meat",cal:201,pro:23,carb:0,fat:11,unit:"g",portion:150,fiber:0,sugar:0,sodium:63,iron:2.7,calcium:11,vitC:0,vitD:0.1,potassium:280},
+{name:"Venison",cat:"Meat",cal:158,pro:30,carb:0,fat:3,unit:"g",portion:150,fiber:0,sugar:0,sodium:51,iron:3.4,calcium:11,vitC:0,vitD:0,potassium:318},
+{name:"Veal cutlet",cat:"Meat",cal:172,pro:31,carb:0,fat:5,unit:"g",portion:150,fiber:0,sugar:0,sodium:60,iron:1.0,calcium:14,vitC:0,vitD:0.1,potassium:310},
+{name:"Rabbit",cat:"Meat",cal:197,pro:29,carb:0,fat:8,unit:"g",portion:150,fiber:0,sugar:0,sodium:45,iron:2.3,calcium:18,vitC:0,vitD:0,potassium:330},
+{name:"Hot dog beef",cat:"Meat",cal:290,pro:10,carb:4,fat:26,unit:"g",portion:57,pcs:"hot,fiber:0,sugar:1,sodium:1090,iron:1.4,calcium:11,vitC:0,vitD:0,potassium:160 dog",pcsW:57},
+{name:"Bratwurst",cat:"Meat",cal:333,pro:14,carb:3,fat:29,unit:"g",portion:85,fiber:0,sugar:0,sodium:846,iron:1.0,calcium:12,vitC:0,vitD:0.3,potassium:210},
+{name:"Italian sausage",cat:"Meat",cal:304,pro:16,carb:2,fat:26,unit:"g",portion:85,fiber:0,sugar:1,sodium:870,iron:1.4,calcium:18,vitC:0,vitD:0.3,potassium:225},
+{name:"Chicken nuggets",cat:"Meat",cal:296,pro:15,carb:18,fat:18,unit:"g",portion:100,fiber:0.5,sugar:1,sodium:560,iron:1.2,calcium:15,vitC:0,vitD:0.1,potassium:200},
 
 // ── Fish & Seafood ──
-{name:"Salmon fillet",cat:"Fish",cal:208,pro:20,carb:0,fat:13,unit:"g",portion:150},
-{name:"Salmon smoked",cat:"Fish",cal:117,pro:18,carb:0,fat:4,unit:"g",portion:60},
-{name:"Tuna canned in water",cat:"Fish",cal:116,pro:26,carb:0,fat:1,unit:"g",portion:140},
-{name:"Tuna canned in oil",cat:"Fish",cal:198,pro:29,carb:0,fat:8,unit:"g",portion:140},
-{name:"Tuna steak",cat:"Fish",cal:144,pro:30,carb:0,fat:1.5,unit:"g",portion:150},
-{name:"Shrimp",cat:"Fish",cal:99,pro:24,carb:0.2,fat:0.3,unit:"g",portion:150},
-{name:"Shrimp cocktail",cat:"Fish",cal:106,pro:20,carb:5,fat:0.5,unit:"g",portion:150},
-{name:"Cod fillet",cat:"Fish",cal:82,pro:18,carb:0,fat:0.7,unit:"g",portion:150},
-{name:"Tilapia fillet",cat:"Fish",cal:96,pro:20,carb:0,fat:1.7,unit:"g",portion:150},
-{name:"Sardines canned",cat:"Fish",cal:208,pro:25,carb:0,fat:11,unit:"g",portion:106},
-{name:"Mackerel",cat:"Fish",cal:205,pro:19,carb:0,fat:14,unit:"g",portion:150},
-{name:"Halibut",cat:"Fish",cal:111,pro:23,carb:0,fat:1.6,unit:"g",portion:150},
-{name:"Trout",cat:"Fish",cal:148,pro:21,carb:0,fat:6.6,unit:"g",portion:150},
-{name:"Scallops",cat:"Fish",cal:69,pro:12,carb:3.2,fat:0.5,unit:"g",portion:120},
-{name:"Crab meat",cat:"Fish",cal:87,pro:18,carb:0,fat:1,unit:"g",portion:120},
-{name:"Lobster",cat:"Fish",cal:89,pro:19,carb:0,fat:0.9,unit:"g",portion:150},
-{name:"Mussels",cat:"Fish",cal:86,pro:12,carb:4,fat:2,unit:"g",portion:150},
-{name:"Oysters",cat:"Fish",cal:68,pro:7,carb:4,fat:2,unit:"g",portion:100},
-{name:"Clams",cat:"Fish",cal:74,pro:13,carb:3,fat:1,unit:"g",portion:100},
-{name:"Calamari rings fried",cat:"Fish",cal:175,pro:18,carb:8,fat:8,unit:"g",portion:100},
-{name:"Anchovies",cat:"Fish",cal:210,pro:29,carb:0,fat:10,unit:"g",portion:30},
-{name:"Swordfish",cat:"Fish",cal:144,pro:24,carb:0,fat:5,unit:"g",portion:150},
-{name:"Sea bass",cat:"Fish",cal:97,pro:18,carb:0,fat:2,unit:"g",portion:150},
-{name:"Catfish",cat:"Fish",cal:105,pro:18,carb:0,fat:3,unit:"g",portion:150},
-{name:"Fish sticks frozen",cat:"Fish",cal:230,pro:12,carb:20,fat:11,unit:"g",portion:100},
-{name:"Crab cake",cat:"Fish",cal:160,pro:14,carb:8,fat:8,unit:"g",portion:60,pcs:"cake",pcsW:60},
-{name:"Tuna salad",cat:"Fish",cal:187,pro:16,carb:10,fat:10,unit:"g",portion:150},
+{name:"Salmon fillet",cat:"Fish",cal:208,pro:20,carb:0,fat:13,unit:"g",portion:150,fiber:0,sugar:0,sodium:59,iron:0.8,calcium:12,vitC:0,vitD:11,potassium:363},
+{name:"Salmon smoked",cat:"Fish",cal:117,pro:18,carb:0,fat:4,unit:"g",portion:60,fiber:0,sugar:0,sodium:672,iron:0.9,calcium:11,vitC:0,vitD:11,potassium:175},
+{name:"Tuna canned in water",cat:"Fish",cal:116,pro:26,carb:0,fat:1,unit:"g",portion:140,fiber:0,sugar:0,sodium:247,iron:1.0,calcium:11,vitC:0,vitD:1.7,potassium:237},
+{name:"Tuna canned in oil",cat:"Fish",cal:198,pro:29,carb:0,fat:8,unit:"g",portion:140,fiber:0,sugar:0,sodium:354,iron:1.4,calcium:13,vitC:0,vitD:2.1,potassium:207},
+{name:"Tuna steak",cat:"Fish",cal:144,pro:30,carb:0,fat:1.5,unit:"g",portion:150,fiber:0,sugar:0,sodium:45,iron:1.0,calcium:4,vitC:0,vitD:5.7,potassium:444},
+{name:"Shrimp",cat:"Fish",cal:99,pro:24,carb:0.2,fat:0.3,unit:"g",portion:150,fiber:0,sugar:0,sodium:119,iron:0.5,calcium:70,vitC:2,vitD:0.1,potassium:185},
+{name:"Shrimp cocktail",cat:"Fish",cal:106,pro:20,carb:5,fat:0.5,unit:"g",portion:150,fiber:0,sugar:2,sodium:350,iron:0.5,calcium:65,vitC:3,vitD:0.1,potassium:180},
+{name:"Cod fillet",cat:"Fish",cal:82,pro:18,carb:0,fat:0.7,unit:"g",portion:150,fiber:0,sugar:0,sodium:54,iron:0.4,calcium:16,vitC:1,vitD:1.0,potassium:413},
+{name:"Tilapia fillet",cat:"Fish",cal:96,pro:20,carb:0,fat:1.7,unit:"g",portion:150,fiber:0,sugar:0,sodium:52,iron:0.6,calcium:10,vitC:0,vitD:3.1,potassium:302},
+{name:"Sardines canned",cat:"Fish",cal:208,pro:25,carb:0,fat:11,unit:"g",portion:106,fiber:0,sugar:0,sodium:505,iron:2.9,calcium:382,vitC:0,vitD:4.8,potassium:397},
+{name:"Mackerel",cat:"Fish",cal:205,pro:19,carb:0,fat:14,unit:"g",portion:150,fiber:0,sugar:0,sodium:90,iron:1.6,calcium:12,vitC:0,vitD:16,potassium:314},
+{name:"Halibut",cat:"Fish",cal:111,pro:23,carb:0,fat:1.6,unit:"g",portion:150,fiber:0,sugar:0,sodium:68,iron:0.7,calcium:7,vitC:0,vitD:5.0,potassium:435},
+{name:"Trout",cat:"Fish",cal:148,pro:21,carb:0,fat:6.6,unit:"g",portion:150,fiber:0,sugar:0,sodium:52,iron:0.7,calcium:67,vitC:1,vitD:15,potassium:375},
+{name:"Scallops",cat:"Fish",cal:69,pro:12,carb:3.2,fat:0.5,unit:"g",portion:120,fiber:0,sugar:0,sodium:161,iron:0.4,calcium:6,vitC:0,vitD:0.1,potassium:205},
+{name:"Crab meat",cat:"Fish",cal:87,pro:18,carb:0,fat:1,unit:"g",portion:120,fiber:0,sugar:0,sodium:395,iron:0.7,calcium:46,vitC:3,vitD:0,potassium:270},
+{name:"Lobster",cat:"Fish",cal:89,pro:19,carb:0,fat:0.9,unit:"g",portion:150,fiber:0,sugar:0,sodium:486,iron:0.4,calcium:61,vitC:0,vitD:0,potassium:352},
+{name:"Mussels",cat:"Fish",cal:86,pro:12,carb:4,fat:2,unit:"g",portion:150,fiber:0,sugar:0,sodium:286,iron:3.9,calcium:26,vitC:8,vitD:0,potassium:268},
+{name:"Oysters",cat:"Fish",cal:68,pro:7,carb:4,fat:2,unit:"g",portion:100,fiber:0,sugar:0,sodium:211,iron:5.1,calcium:45,vitC:3,vitD:0.3,potassium:168},
+{name:"Clams",cat:"Fish",cal:74,pro:13,carb:3,fat:1,unit:"g",portion:100,fiber:0,sugar:0,sodium:601,iron:14,calcium:46,vitC:13,vitD:0,potassium:314},
+{name:"Calamari rings fried",cat:"Fish",cal:175,pro:18,carb:8,fat:8,unit:"g",portion:100,fiber:0,sugar:0.5,sodium:260,iron:0.9,calcium:33,vitC:2,vitD:0,potassium:180},
+{name:"Anchovies",cat:"Fish",cal:210,pro:29,carb:0,fat:10,unit:"g",portion:30,fiber:0,sugar:0,sodium:3668,iron:4.6,calcium:232,vitC:0,vitD:0,potassium:544},
+{name:"Swordfish",cat:"Fish",cal:144,pro:24,carb:0,fat:5,unit:"g",portion:150,fiber:0,sugar:0,sodium:102,iron:0.8,calcium:5,vitC:1,vitD:14.4,potassium:418},
+{name:"Sea bass",cat:"Fish",cal:97,pro:18,carb:0,fat:2,unit:"g",portion:150,fiber:0,sugar:0,sodium:68,iron:0.4,calcium:10,vitC:0,vitD:5.6,potassium:256},
+{name:"Catfish",cat:"Fish",cal:105,pro:18,carb:0,fat:3,unit:"g",portion:150,fiber:0,sugar:0,sodium:50,iron:0.4,calcium:9,vitC:0,vitD:12.5,potassium:302},
+{name:"Fish sticks frozen",cat:"Fish",cal:230,pro:12,carb:20,fat:11,unit:"g",portion:100,fiber:0.5,sugar:2,sodium:480,iron:1.0,calcium:25,vitC:0,vitD:1,potassium:160},
+{name:"Crab cake",cat:"Fish",cal:160,pro:14,carb:8,fat:8,unit:"g",portion:60,pcs:"cake",pcsW:60,fiber:0.3,sugar:1,sodium:420,iron:0.6,calcium:35,vitC:2,vitD:0.1,potassium:200},
+{name:"Tuna salad",cat:"Fish",cal:187,pro:16,carb:10,fat:10,unit:"g",portion:150,fiber:0.3,sugar:2,sodium:340,iron:0.8,calcium:15,vitC:1,vitD:1.5,potassium:180},
 
 // ── Dairy & Eggs ──
-{name:"Egg whole",cat:"Dairy",cal:155,pro:13,carb:1.1,fat:11,unit:"g",portion:50,pcs:"egg",pcsW:50},
-{name:"Egg white",cat:"Dairy",cal:52,pro:11,carb:0.7,fat:0.2,unit:"g",portion:33,pcs:"white",pcsW:33},
-{name:"Egg yolk",cat:"Dairy",cal:322,pro:16,carb:3.6,fat:27,unit:"g",portion:17},
-{name:"Egg hard-boiled",cat:"Dairy",cal:155,pro:13,carb:1.1,fat:11,unit:"g",portion:50,pcs:"egg",pcsW:50},
-{name:"Egg scrambled",cat:"Dairy",cal:148,pro:10,carb:2,fat:11,unit:"g",portion:100},
-{name:"Egg omelette plain",cat:"Dairy",cal:154,pro:11,carb:1,fat:12,unit:"g",portion:120},
-{name:"Egg fried",cat:"Dairy",cal:196,pro:14,carb:1,fat:15,unit:"g",portion:46,pcs:"egg",pcsW:46},
-{name:"Greek yogurt 0%",cat:"Dairy",cal:59,pro:10,carb:3.6,fat:0.4,unit:"g",portion:200},
-{name:"Greek yogurt 2%",cat:"Dairy",cal:73,pro:9.7,carb:3.9,fat:2,unit:"g",portion:200},
-{name:"Greek yogurt full fat",cat:"Dairy",cal:97,pro:9,carb:3.6,fat:5,unit:"g",portion:200},
-{name:"Yogurt plain low fat",cat:"Dairy",cal:63,pro:5.3,carb:7,fat:1.5,unit:"g",portion:200},
-{name:"Yogurt fruit flavored",cat:"Dairy",cal:99,pro:3.5,carb:18,fat:1.2,unit:"g",portion:175},
-{name:"Cottage cheese",cat:"Dairy",cal:98,pro:11,carb:3.4,fat:4.3,unit:"g",portion:200},
-{name:"Cottage cheese low fat",cat:"Dairy",cal:72,pro:10,carb:5,fat:1,unit:"g",portion:200},
-{name:"Skyr",cat:"Dairy",cal:63,pro:11,carb:4,fat:0.2,unit:"g",portion:200},
-{name:"Milk whole",cat:"Dairy",cal:61,pro:3.2,carb:4.8,fat:3.3,unit:"ml",portion:250},
-{name:"Milk 2%",cat:"Dairy",cal:50,pro:3.4,carb:4.8,fat:2,unit:"ml",portion:250},
-{name:"Milk skim",cat:"Dairy",cal:34,pro:3.4,carb:5,fat:0.1,unit:"ml",portion:250},
-{name:"Chocolate milk",cat:"Dairy",cal:83,pro:3.4,carb:12,fat:2.5,unit:"ml",portion:250},
-{name:"Cheddar cheese",cat:"Dairy",cal:403,pro:25,carb:1.3,fat:33,unit:"g",portion:30},
-{name:"Mozzarella",cat:"Dairy",cal:280,pro:28,carb:3.1,fat:17,unit:"g",portion:60},
-{name:"Mozzarella fresh",cat:"Dairy",cal:280,pro:22,carb:2,fat:22,unit:"g",portion:60},
-{name:"Parmesan",cat:"Dairy",cal:431,pro:38,carb:4,fat:29,unit:"g",portion:20},
-{name:"Swiss cheese",cat:"Dairy",cal:380,pro:27,carb:5,fat:28,unit:"g",portion:30},
-{name:"Brie",cat:"Dairy",cal:334,pro:21,carb:0.5,fat:28,unit:"g",portion:30},
-{name:"Gouda",cat:"Dairy",cal:356,pro:25,carb:2,fat:27,unit:"g",portion:30},
-{name:"Feta cheese",cat:"Dairy",cal:264,pro:14,carb:4,fat:21,unit:"g",portion:40},
-{name:"Goat cheese",cat:"Dairy",cal:364,pro:22,carb:1,fat:30,unit:"g",portion:30},
-{name:"Cream cheese",cat:"Dairy",cal:342,pro:6,carb:4,fat:34,unit:"g",portion:30},
-{name:"Ricotta cheese",cat:"Dairy",cal:174,pro:11,carb:3,fat:13,unit:"g",portion:60},
-{name:"Blue cheese",cat:"Dairy",cal:353,pro:21,carb:2,fat:29,unit:"g",portion:30},
-{name:"String cheese",cat:"Dairy",cal:280,pro:25,carb:2,fat:18,unit:"g",portion:28,pcs:"stick",pcsW:28},
-{name:"Whey protein powder",cat:"Dairy",cal:400,pro:80,carb:8,fat:4,unit:"g",portion:30},
-{name:"Casein protein powder",cat:"Dairy",cal:370,pro:75,carb:10,fat:3,unit:"g",portion:30},
-{name:"Butter",cat:"Dairy",cal:717,pro:0.9,carb:0.1,fat:81,unit:"g",portion:14},
-{name:"Butter salted",cat:"Dairy",cal:717,pro:0.9,carb:0.1,fat:81,unit:"g",portion:14},
-{name:"Sour cream",cat:"Dairy",cal:193,pro:2.4,carb:3.4,fat:20,unit:"g",portion:30},
-{name:"Heavy cream",cat:"Dairy",cal:340,pro:2,carb:3,fat:36,unit:"ml",portion:15},
-{name:"Whipped cream",cat:"Dairy",cal:257,pro:3,carb:13,fat:22,unit:"g",portion:30},
-{name:"Ice cream vanilla",cat:"Dairy",cal:207,pro:3.5,carb:24,fat:11,unit:"g",portion:130},
-{name:"Ice cream chocolate",cat:"Dairy",cal:216,pro:3.8,carb:28,fat:11,unit:"g",portion:130},
-{name:"Frozen yogurt",cat:"Dairy",cal:159,pro:4,carb:28,fat:4,unit:"g",portion:130},
+{name:"Egg whole",cat:"Dairy",cal:155,pro:13,carb:1.1,fat:11,unit:"g",portion:50,pcs:"egg",pcsW:50,fiber:0,sugar:0.4,sodium:142,iron:1.8,calcium:56,vitC:0,vitD:2.0,potassium:138},
+{name:"Egg white",cat:"Dairy",cal:52,pro:11,carb:0.7,fat:0.2,unit:"g",portion:33,pcs:"white",pcsW:33,fiber:0,sugar:0.7,sodium:166,iron:0.1,calcium:7,vitC:0,vitD:0,potassium:163},
+{name:"Egg yolk",cat:"Dairy",cal:322,pro:16,carb:3.6,fat:27,unit:"g",portion:17,fiber:0,sugar:0.6,sodium:48,iron:2.7,calcium:129,vitC:0,vitD:5.4,potassium:109},
+{name:"Egg hard-boiled",cat:"Dairy",cal:155,pro:13,carb:1.1,fat:11,unit:"g",portion:50,pcs:"egg",pcsW:50,fiber:0,sugar:0.4,sodium:124,iron:1.2,calcium:50,vitC:0,vitD:2.0,potassium:126},
+{name:"Egg scrambled",cat:"Dairy",cal:148,pro:10,carb:2,fat:11,unit:"g",portion:100,fiber:0,sugar:0.5,sodium:200,iron:1.5,calcium:66,vitC:0,vitD:1.8,potassium:140},
+{name:"Egg omelette plain",cat:"Dairy",cal:154,pro:11,carb:1,fat:12,unit:"g",portion:120,fiber:0,sugar:0.4,sodium:185,iron:1.5,calcium:60,vitC:0,vitD:1.8,potassium:130},
+{name:"Egg fried",cat:"Dairy",cal:196,pro:14,carb:1,fat:15,unit:"g",portion:46,pcs:"egg",pcsW:46,fiber:0,sugar:0.4,sodium:207,iron:1.9,calcium:62,vitC:0,vitD:2.0,potassium:152},
+{name:"Greek yogurt 0%",cat:"Dairy",cal:59,pro:10,carb:3.6,fat:0.4,unit:"g",portion:200,fiber:0,sugar:3.2,sodium:36,iron:0.1,calcium:110,vitC:0,vitD:0,potassium:141},
+{name:"Greek yogurt 2%",cat:"Dairy",cal:73,pro:9.7,carb:3.9,fat:2,unit:"g",portion:200,fiber:0,sugar:3.5,sodium:36,iron:0.1,calcium:115,vitC:0,vitD:0,potassium:141},
+{name:"Greek yogurt full fat",cat:"Dairy",cal:97,pro:9,carb:3.6,fat:5,unit:"g",portion:200,fiber:0,sugar:3.2,sodium:47,iron:0.1,calcium:100,vitC:0,vitD:0.1,potassium:141},
+{name:"Yogurt plain low fat",cat:"Dairy",cal:63,pro:5.3,carb:7,fat:1.5,unit:"g",portion:200,fiber:0,sugar:7,sodium:51,iron:0.1,calcium:183,vitC:1,vitD:0.1,potassium:234},
+{name:"Yogurt fruit flavored",cat:"Dairy",cal:99,pro:3.5,carb:18,fat:1.2,unit:"g",portion:175,fiber:0,sugar:15,sodium:55,iron:0.1,calcium:120,vitC:1,vitD:0.1,potassium:180},
+{name:"Cottage cheese",cat:"Dairy",cal:98,pro:11,carb:3.4,fat:4.3,unit:"g",portion:200,fiber:0,sugar:2.7,sodium:364,iron:0.1,calcium:83,vitC:0,vitD:0,potassium:104},
+{name:"Cottage cheese low fat",cat:"Dairy",cal:72,pro:10,carb:5,fat:1,unit:"g",portion:200,fiber:0,sugar:4,sodium:350,iron:0.1,calcium:90,vitC:0,vitD:0,potassium:104},
+{name:"Skyr",cat:"Dairy",cal:63,pro:11,carb:4,fat:0.2,unit:"g",portion:200,fiber:0,sugar:3.5,sodium:38,iron:0.1,calcium:120,vitC:0,vitD:0,potassium:150},
+{name:"Milk whole",cat:"Dairy",cal:61,pro:3.2,carb:4.8,fat:3.3,unit:"ml",portion:250,fiber:0,sugar:5,sodium:43,iron:0,calcium:125,vitC:0,vitD:1.3,potassium:150},
+{name:"Milk 2%",cat:"Dairy",cal:50,pro:3.4,carb:4.8,fat:2,unit:"ml",portion:250,fiber:0,sugar:5,sodium:47,iron:0,calcium:125,vitC:0,vitD:1.3,potassium:150},
+{name:"Milk skim",cat:"Dairy",cal:34,pro:3.4,carb:5,fat:0.1,unit:"ml",portion:250,fiber:0,sugar:5,sodium:42,iron:0,calcium:125,vitC:0,vitD:1.3,potassium:156},
+{name:"Chocolate milk",cat:"Dairy",cal:83,pro:3.4,carb:12,fat:2.5,unit:"ml",portion:250,fiber:0.5,sugar:9,sodium:60,iron:0.3,calcium:115,vitC:0,vitD:1.3,potassium:170},
+{name:"Cheddar cheese",cat:"Dairy",cal:403,pro:25,carb:1.3,fat:33,unit:"g",portion:30,fiber:0,sugar:0.5,sodium:621,iron:0.7,calcium:721,vitC:0,vitD:0.3,potassium:98},
+{name:"Mozzarella",cat:"Dairy",cal:280,pro:28,carb:3.1,fat:17,unit:"g",portion:60,fiber:0,sugar:1,sodium:627,iron:0.4,calcium:505,vitC:0,vitD:0.2,potassium:76},
+{name:"Mozzarella fresh",cat:"Dairy",cal:280,pro:22,carb:2,fat:22,unit:"g",portion:60,fiber:0,sugar:1,sodium:460,iron:0.4,calcium:505,vitC:0,vitD:0.2,potassium:76},
+{name:"Parmesan",cat:"Dairy",cal:431,pro:38,carb:4,fat:29,unit:"g",portion:20,fiber:0,sugar:0.8,sodium:1529,iron:0.8,calcium:1184,vitC:0,vitD:0.5,potassium:92},
+{name:"Swiss cheese",cat:"Dairy",cal:380,pro:27,carb:5,fat:28,unit:"g",portion:30,fiber:0,sugar:1.3,sodium:192,iron:0.2,calcium:791,vitC:0,vitD:0.6,potassium:77},
+{name:"Brie",cat:"Dairy",cal:334,pro:21,carb:0.5,fat:28,unit:"g",portion:30,fiber:0,sugar:0.5,sodium:629,iron:0.5,calcium:184,vitC:0,vitD:0.5,potassium:152},
+{name:"Gouda",cat:"Dairy",cal:356,pro:25,carb:2,fat:27,unit:"g",portion:30,fiber:0,sugar:2,sodium:819,iron:0.2,calcium:700,vitC:0,vitD:0.5,potassium:121},
+{name:"Feta cheese",cat:"Dairy",cal:264,pro:14,carb:4,fat:21,unit:"g",portion:40,fiber:0,sugar:0,sodium:917,iron:0.6,calcium:493,vitC:0,vitD:0.4,potassium:62},
+{name:"Goat cheese",cat:"Dairy",cal:364,pro:22,carb:1,fat:30,unit:"g",portion:30,fiber:0,sugar:0,sodium:515,iron:1.6,calcium:140,vitC:0,vitD:0.3,potassium:158},
+{name:"Cream cheese",cat:"Dairy",cal:342,pro:6,carb:4,fat:34,unit:"g",portion:30,fiber:0,sugar:3.2,sodium:321,iron:0.4,calcium:97,vitC:0,vitD:0.1,potassium:132},
+{name:"Ricotta cheese",cat:"Dairy",cal:174,pro:11,carb:3,fat:13,unit:"g",portion:60,fiber:0,sugar:0.3,sodium:84,iron:0.4,calcium:207,vitC:0,vitD:0.1,potassium:105},
+{name:"Blue cheese",cat:"Dairy",cal:353,pro:21,carb:2,fat:29,unit:"g",portion:30,fiber:0,sugar:0,sodium:1395,iron:0.3,calcium:528,vitC:0,vitD:0.5,potassium:256},
+{name:"String cheese",cat:"Dairy",cal:280,pro:25,carb:2,fat:18,unit:"g",portion:28,pcs:"stick",pcsW:28,fiber:0,sugar:1,sodium:620,iron:0.4,calcium:500,vitC:0,vitD:0.2,potassium:76},
+{name:"Whey protein powder",cat:"Dairy",cal:400,pro:80,carb:8,fat:4,unit:"g",portion:30,fiber:0,sugar:2,sodium:200,iron:2.0,calcium:500,vitC:0,vitD:0,potassium:400},
+{name:"Casein protein powder",cat:"Dairy",cal:370,pro:75,carb:10,fat:3,unit:"g",portion:30,fiber:0,sugar:2,sodium:150,iron:1.5,calcium:450,vitC:0,vitD:0,potassium:350},
+{name:"Butter",cat:"Dairy",cal:717,pro:0.9,carb:0.1,fat:81,unit:"g",portion:14,fiber:0,sugar:0,sodium:11,iron:0,calcium:24,vitC:0,vitD:0.1,potassium:24},
+{name:"Butter salted",cat:"Dairy",cal:717,pro:0.9,carb:0.1,fat:81,unit:"g",portion:14,fiber:0,sugar:0,sodium:643,iron:0,calcium:24,vitC:0,vitD:0.1,potassium:24},
+{name:"Sour cream",cat:"Dairy",cal:193,pro:2.4,carb:3.4,fat:20,unit:"g",portion:30,fiber:0,sugar:3.5,sodium:36,iron:0,calcium:100,vitC:0.5,vitD:0.2,potassium:125},
+{name:"Heavy cream",cat:"Dairy",cal:340,pro:2,carb:3,fat:36,unit:"ml",portion:15,fiber:0,sugar:3,sodium:38,iron:0,calcium:65,vitC:0.6,vitD:0.5,potassium:75},
+{name:"Whipped cream",cat:"Dairy",cal:257,pro:3,carb:13,fat:22,unit:"g",portion:30,fiber:0,sugar:12,sodium:70,iron:0.1,calcium:72,vitC:0,vitD:0.2,potassium:90},
+{name:"Ice cream vanilla",cat:"Dairy",cal:207,pro:3.5,carb:24,fat:11,unit:"g",portion:130,fiber:0.7,sugar:21,sodium:80,iron:0.1,calcium:128,vitC:0.6,vitD:0.2,potassium:199},
+{name:"Ice cream chocolate",cat:"Dairy",cal:216,pro:3.8,carb:28,fat:11,unit:"g",portion:130,fiber:1.2,sugar:23,sodium:76,iron:0.5,calcium:109,vitC:0.3,vitD:0.1,potassium:224},
+{name:"Frozen yogurt",cat:"Dairy",cal:159,pro:4,carb:28,fat:4,unit:"g",portion:130,fiber:0,sugar:22,sodium:60,iron:0.1,calcium:130,vitC:0.5,vitD:0,potassium:180},
 
 // ── Breakfast Foods ──
-{name:"Pancakes",cat:"Breakfast",cal:227,pro:6,carb:28,fat:10,unit:"g",portion:75,pcs:"pancake",pcsW:75},
-{name:"Pancakes blueberry",cat:"Breakfast",cal:233,pro:6,carb:30,fat:10,unit:"g",portion:75,pcs:"pancake",pcsW:75},
-{name:"Pancakes protein",cat:"Breakfast",cal:195,pro:14,carb:22,fat:6,unit:"g",portion:75,pcs:"pancake",pcsW:75},
-{name:"Crêpe plain",cat:"Breakfast",cal:224,pro:6.5,carb:29,fat:9,unit:"g",portion:65,pcs:"crêpe",pcsW:65},
-{name:"Crêpe with Nutella",cat:"Breakfast",cal:310,pro:5,carb:40,fat:15,unit:"g",portion:90},
-{name:"Crêpe ham cheese",cat:"Breakfast",cal:250,pro:12,carb:22,fat:13,unit:"g",portion:120},
-{name:"Waffle",cat:"Breakfast",cal:291,pro:8,carb:33,fat:14,unit:"g",portion:75,pcs:"waffle",pcsW:75},
-{name:"Waffle protein",cat:"Breakfast",cal:220,pro:16,carb:24,fat:7,unit:"g",portion:75,pcs:"waffle",pcsW:75},
-{name:"French toast",cat:"Breakfast",cal:229,pro:8,carb:25,fat:11,unit:"g",portion:65,pcs:"slice",pcsW:65},
-{name:"Oats dry",cat:"Breakfast",cal:389,pro:17,carb:66,fat:7,unit:"g",portion:80},
-{name:"Oatmeal cooked",cat:"Breakfast",cal:71,pro:2.5,carb:12,fat:1.5,unit:"g",portion:250},
-{name:"Overnight oats",cat:"Breakfast",cal:105,pro:4,carb:15,fat:3.5,unit:"g",portion:250},
-{name:"Granola",cat:"Breakfast",cal:471,pro:10,carb:61,fat:20,unit:"g",portion:60},
-{name:"Muesli",cat:"Breakfast",cal:370,pro:10,carb:66,fat:6,unit:"g",portion:60},
-{name:"Cereal corn flakes",cat:"Breakfast",cal:357,pro:7,carb:84,fat:0.4,unit:"g",portion:30},
-{name:"Cereal bran flakes",cat:"Breakfast",cal:340,pro:10,carb:72,fat:3,unit:"g",portion:40},
-{name:"Cereal cheerios",cat:"Breakfast",cal:375,pro:12,carb:74,fat:6,unit:"g",portion:30},
-{name:"Cereal muesli",cat:"Breakfast",cal:370,pro:10,carb:66,fat:6,unit:"g",portion:60},
-{name:"Croissant",cat:"Breakfast",cal:406,pro:8,carb:46,fat:21,unit:"g",portion:60,pcs:"croissant",pcsW:60},
-{name:"Croissant almond",cat:"Breakfast",cal:465,pro:9,carb:45,fat:28,unit:"g",portion:80},
-{name:"Muffin blueberry",cat:"Breakfast",cal:350,pro:5,carb:48,fat:15,unit:"g",portion:115,pcs:"muffin",pcsW:115},
-{name:"Muffin bran",cat:"Breakfast",cal:305,pro:6,carb:45,fat:12,unit:"g",portion:115},
-{name:"Muffin english",cat:"Breakfast",cal:227,pro:8,carb:44,fat:2,unit:"g",portion:57,pcs:"muffin",pcsW:57},
-{name:"Bagel plain",cat:"Breakfast",cal:257,pro:10,carb:50,fat:1.6,unit:"g",portion:105,pcs:"bagel",pcsW:105},
-{name:"Bagel everything",cat:"Breakfast",cal:270,pro:10,carb:50,fat:3,unit:"g",portion:105,pcs:"bagel",pcsW:105},
-{name:"Toast white",cat:"Breakfast",cal:265,pro:9,carb:49,fat:3.2,unit:"g",portion:30,pcs:"slice",pcsW:30},
-{name:"Toast whole wheat",cat:"Breakfast",cal:247,pro:13,carb:41,fat:3.4,unit:"g",portion:36,pcs:"slice",pcsW:36},
-{name:"Breakfast burrito",cat:"Breakfast",cal:200,pro:10,carb:18,fat:10,unit:"g",portion:200},
-{name:"Breakfast sandwich egg",cat:"Breakfast",cal:250,pro:14,carb:22,fat:12,unit:"g",portion:150},
-{name:"Açaí bowl",cat:"Breakfast",cal:120,pro:2,carb:18,fat:5,unit:"g",portion:300},
-{name:"Smoothie bowl",cat:"Breakfast",cal:100,pro:3,carb:16,fat:3,unit:"g",portion:300},
-{name:"Maple syrup",cat:"Breakfast",cal:260,pro:0,carb:67,fat:0,unit:"ml",portion:30},
-{name:"Honey",cat:"Breakfast",cal:304,pro:0.3,carb:82,fat:0,unit:"g",portion:21},
-{name:"Jam strawberry",cat:"Breakfast",cal:250,pro:0.4,carb:63,fat:0.1,unit:"g",portion:20},
-{name:"Nutella",cat:"Breakfast",cal:539,pro:6,carb:58,fat:31,unit:"g",portion:30},
+{name:"Pancakes",cat:"Breakfast",cal:227,pro:6,carb:28,fat:10,unit:"g",portion:75,pcs:"pancake",pcsW:75,fiber:1,sugar:6,sodium:430,iron:1.7,calcium:90,vitC:0,vitD:0.2,potassium:100},
+{name:"Pancakes blueberry",cat:"Breakfast",cal:233,pro:6,carb:30,fat:10,unit:"g",portion:75,pcs:"pancake",pcsW:75,fiber:1.2,sugar:8,sodium:425,iron:1.6,calcium:85,vitC:2,vitD:0.2,potassium:110},
+{name:"Pancakes protein",cat:"Breakfast",cal:195,pro:14,carb:22,fat:6,unit:"g",portion:75,pcs:"pancake",pcsW:75,fiber:2,sugar:4,sodium:400,iron:2.0,calcium:130,vitC:0,vitD:0.3,potassium:150},
+{name:"Crêpe plain",cat:"Breakfast",cal:224,pro:6.5,carb:29,fat:9,unit:"g",portion:65,pcs:"crêpe",pcsW:65,fiber:0.5,sugar:5,sodium:260,iron:1.4,calcium:60,vitC:0,vitD:0.3,potassium:90},
+{name:"Crêpe with Nutella",cat:"Breakfast",cal:310,pro:5,carb:40,fat:15,unit:"g",portion:90,fiber:1,sugar:25,sodium:180,iron:2,calcium:65,vitC:0,vitD:0.2,potassium:130},
+{name:"Crêpe ham cheese",cat:"Breakfast",cal:250,pro:12,carb:22,fat:13,unit:"g",portion:120,fiber:0.5,sugar:3,sodium:500,iron:1.2,calcium:120,vitC:0,vitD:0.3,potassium:150},
+{name:"Waffle",cat:"Breakfast",cal:291,pro:8,carb:33,fat:14,unit:"g",portion:75,pcs:"waffle",pcsW:75,fiber:1,sugar:7,sodium:500,iron:2.1,calcium:85,vitC:0,vitD:0.2,potassium:95},
+{name:"Waffle protein",cat:"Breakfast",cal:220,pro:16,carb:24,fat:7,unit:"g",portion:75,pcs:"waffle",pcsW:75,fiber:2,sugar:4,sodium:400,iron:2.5,calcium:130,vitC:0,vitD:0.3,potassium:150},
+{name:"French toast",cat:"Breakfast",cal:229,pro:8,carb:25,fat:11,unit:"g",portion:65,pcs:"slice",pcsW:65,fiber:0.7,sugar:6,sodium:380,iron:1.6,calcium:65,vitC:0,vitD:0.4,potassium:105},
+{name:"Oats dry",cat:"Breakfast",cal:389,pro:17,carb:66,fat:7,unit:"g",portion:80,fiber:10.6,sugar:1,sodium:2,iron:4.7,calcium:54,vitC:0,vitD:0,potassium:429},
+{name:"Oatmeal cooked",cat:"Breakfast",cal:71,pro:2.5,carb:12,fat:1.5,unit:"g",portion:250,fiber:1.7,sugar:0.3,sodium:5,iron:0.9,calcium:9,vitC:0,vitD:0,potassium:70},
+{name:"Overnight oats",cat:"Breakfast",cal:105,pro:4,carb:15,fat:3.5,unit:"g",portion:250,fiber:2.5,sugar:3,sodium:40,iron:1.0,calcium:80,vitC:0,vitD:0.1,potassium:120},
+{name:"Granola",cat:"Breakfast",cal:471,pro:10,carb:61,fat:20,unit:"g",portion:60,fiber:5,sugar:20,sodium:26,iron:3.5,calcium:48,vitC:0,vitD:0,potassium:300},
+{name:"Muesli",cat:"Breakfast",cal:370,pro:10,carb:66,fat:6,unit:"g",portion:60,fiber:6,sugar:15,sodium:10,iron:3.5,calcium:55,vitC:0,vitD:0,potassium:350},
+{name:"Cereal corn flakes",cat:"Breakfast",cal:357,pro:7,carb:84,fat:0.4,unit:"g",portion:30,fiber:1.2,sugar:8,sodium:729,iron:8.0,calcium:3,vitC:21,vitD:1.5,potassium:82},
+{name:"Cereal bran flakes",cat:"Breakfast",cal:340,pro:10,carb:72,fat:3,unit:"g",portion:40,fiber:13,sugar:18,sodium:520,iron:10,calcium:30,vitC:0,vitD:1.5,potassium:490},
+{name:"Cereal cheerios",cat:"Breakfast",cal:375,pro:12,carb:74,fat:6,unit:"g",portion:30,fiber:10,sugar:5,sodium:497,iron:12,calcium:333,vitC:20,vitD:1.5,potassium:300},
+{name:"Cereal muesli",cat:"Breakfast",cal:370,pro:10,carb:66,fat:6,unit:"g",portion:60,fiber:6,sugar:15,sodium:10,iron:3.5,calcium:55,vitC:0,vitD:0,potassium:350},
+{name:"Croissant",cat:"Breakfast",cal:406,pro:8,carb:46,fat:21,unit:"g",portion:60,pcs:"croissant",pcsW:60,fiber:1.5,sugar:6,sodium:360,iron:1.7,calcium:37,vitC:0,vitD:0.1,potassium:102},
+{name:"Croissant almond",cat:"Breakfast",cal:465,pro:9,carb:45,fat:28,unit:"g",portion:80,fiber:2,sugar:12,sodium:320,iron:1.8,calcium:60,vitC:0,vitD:0.1,potassium:130},
+{name:"Muffin blueberry",cat:"Breakfast",cal:350,pro:5,carb:48,fat:15,unit:"g",portion:115,pcs:"muffin",pcsW:115,fiber:1.5,sugar:25,sodium:360,iron:1.5,calcium:50,vitC:1,vitD:0.1,potassium:95},
+{name:"Muffin bran",cat:"Breakfast",cal:305,pro:6,carb:45,fat:12,unit:"g",portion:115,fiber:4,sugar:20,sodium:370,iron:2.5,calcium:55,vitC:0,vitD:0.1,potassium:220},
+{name:"Muffin english",cat:"Breakfast",cal:227,pro:8,carb:44,fat:2,unit:"g",portion:57,pcs:"muffin",pcsW:57,fiber:1.6,sugar:2,sodium:453,iron:2.0,calcium:125,vitC:0,vitD:0,potassium:90},
+{name:"Bagel plain",cat:"Breakfast",cal:257,pro:10,carb:50,fat:1.6,unit:"g",portion:105,pcs:"bagel",pcsW:105,fiber:2,sugar:4,sodium:450,iron:3.2,calcium:73,vitC:0,vitD:0,potassium:90},
+{name:"Bagel everything",cat:"Breakfast",cal:270,pro:10,carb:50,fat:3,unit:"g",portion:105,pcs:"bagel",pcsW:105,fiber:2.2,sugar:4,sodium:520,iron:3.2,calcium:80,vitC:0,vitD:0,potassium:100},
+{name:"Toast white",cat:"Breakfast",cal:265,pro:9,carb:49,fat:3.2,unit:"g",portion:30,pcs:"slice",pcsW:30,fiber:2.7,sugar:5,sodium:481,iron:3.6,calcium:151,vitC:0,vitD:0,potassium:117},
+{name:"Toast whole wheat",cat:"Breakfast",cal:247,pro:13,carb:41,fat:3.4,unit:"g",portion:36,pcs:"slice",pcsW:36,fiber:6.8,sugar:3,sodium:460,iron:2.5,calcium:107,vitC:0,vitD:0,potassium:254},
+{name:"Breakfast burrito",cat:"Breakfast",cal:200,pro:10,carb:18,fat:10,unit:"g",portion:200,fiber:2,sugar:2,sodium:500,iron:1.5,calcium:80,vitC:3,vitD:0.5,potassium:180},
+{name:"Breakfast sandwich egg",cat:"Breakfast",cal:250,pro:14,carb:22,fat:12,unit:"g",portion:150,fiber:1.5,sugar:3,sodium:600,iron:1.8,calcium:100,vitC:0,vitD:0.7,potassium:160},
+{name:"Açaí bowl",cat:"Breakfast",cal:120,pro:2,carb:18,fat:5,unit:"g",portion:300,fiber:3,sugar:8,sodium:5,iron:0.5,calcium:30,vitC:10,vitD:0,potassium:200},
+{name:"Smoothie bowl",cat:"Breakfast",cal:100,pro:3,carb:16,fat:3,unit:"g",portion:300,fiber:2.5,sugar:10,sodium:15,iron:0.4,calcium:40,vitC:15,vitD:0,potassium:180},
+{name:"Maple syrup",cat:"Breakfast",cal:260,pro:0,carb:67,fat:0,unit:"ml",portion:30,fiber:0,sugar:60,sodium:12,iron:0.1,calcium:67,vitC:0,vitD:0,potassium:204},
+{name:"Honey",cat:"Breakfast",cal:304,pro:0.3,carb:82,fat:0,unit:"g",portion:21,fiber:0,sugar:82,sodium:4,iron:0.4,calcium:6,vitC:0.5,vitD:0,potassium:52},
+{name:"Jam strawberry",cat:"Breakfast",cal:250,pro:0.4,carb:63,fat:0.1,unit:"g",portion:20,fiber:0.5,sugar:49,sodium:15,iron:0.2,calcium:10,vitC:5,vitD:0,potassium:50},
+{name:"Nutella",cat:"Breakfast",cal:539,pro:6,carb:58,fat:31,unit:"g",portion:30,fiber:2,sugar:55,sodium:41,iron:3.5,calcium:75,vitC:0,vitD:0,potassium:350},
 
 // ── Plant Proteins ──
-{name:"Tofu firm",cat:"Plant",cal:144,pro:17,carb:3,fat:9,unit:"g",portion:200},
-{name:"Tofu silken",cat:"Plant",cal:55,pro:5,carb:2.3,fat:2.7,unit:"g",portion:150},
-{name:"Tofu extra firm",cat:"Plant",cal:155,pro:18,carb:2,fat:9,unit:"g",portion:200},
-{name:"Tempeh",cat:"Plant",cal:192,pro:20,carb:8,fat:11,unit:"g",portion:150},
-{name:"Seitan",cat:"Plant",cal:370,pro:75,carb:14,fat:2,unit:"g",portion:100},
-{name:"Edamame",cat:"Plant",cal:122,pro:11,carb:10,fat:5,unit:"g",portion:150},
-{name:"Lentils cooked",cat:"Plant",cal:116,pro:9,carb:20,fat:0.4,unit:"g",portion:200},
-{name:"Red lentils cooked",cat:"Plant",cal:116,pro:9,carb:20,fat:0.4,unit:"g",portion:200},
-{name:"Chickpeas cooked",cat:"Plant",cal:164,pro:9,carb:27,fat:2.6,unit:"g",portion:200},
-{name:"Black beans cooked",cat:"Plant",cal:132,pro:9,carb:24,fat:0.5,unit:"g",portion:200},
-{name:"Kidney beans cooked",cat:"Plant",cal:127,pro:9,carb:23,fat:0.5,unit:"g",portion:200},
-{name:"White beans cooked",cat:"Plant",cal:139,pro:10,carb:25,fat:0.4,unit:"g",portion:200},
-{name:"Pinto beans cooked",cat:"Plant",cal:143,pro:9,carb:26,fat:0.6,unit:"g",portion:200},
-{name:"Soybeans cooked",cat:"Plant",cal:173,pro:17,carb:10,fat:9,unit:"g",portion:150},
-{name:"Split peas cooked",cat:"Plant",cal:118,pro:8,carb:21,fat:0.4,unit:"g",portion:200},
-{name:"Falafel",cat:"Plant",cal:333,pro:13,carb:32,fat:18,unit:"g",portion:50,pcs:"piece",pcsW:50},
-{name:"Veggie burger patty",cat:"Plant",cal:200,pro:16,carb:14,fat:9,unit:"g",portion:100,pcs:"patty",pcsW:100},
-{name:"Beyond Meat burger",cat:"Plant",cal:250,pro:20,carb:3,fat:18,unit:"g",portion:113,pcs:"patty",pcsW:113},
-{name:"Impossible burger",cat:"Plant",cal:240,pro:19,carb:9,fat:14,unit:"g",portion:113,pcs:"patty",pcsW:113},
-{name:"Peanut butter",cat:"Plant",cal:588,pro:25,carb:20,fat:50,unit:"g",portion:32},
-{name:"Almond butter",cat:"Plant",cal:614,pro:21,carb:19,fat:56,unit:"g",portion:32},
-{name:"Pea protein powder",cat:"Plant",cal:375,pro:80,carb:5,fat:5,unit:"g",portion:30},
-{name:"Soy protein powder",cat:"Plant",cal:338,pro:80,carb:2,fat:1,unit:"g",portion:30},
-{name:"Hummus",cat:"Plant",cal:166,pro:8,carb:14,fat:10,unit:"g",portion:60},
+{name:"Tofu firm",cat:"Plant",cal:144,pro:17,carb:3,fat:9,unit:"g",portion:200,fiber:0.3,sugar:0.6,sodium:14,iron:2.7,calcium:350,vitC:0,vitD:0,potassium:237},
+{name:"Tofu silken",cat:"Plant",cal:55,pro:5,carb:2.3,fat:2.7,unit:"g",portion:150,fiber:0,sugar:1.2,sodium:7,iron:0.7,calcium:111,vitC:0,vitD:0,potassium:120},
+{name:"Tofu extra firm",cat:"Plant",cal:155,pro:18,carb:2,fat:9,unit:"g",portion:200,fiber:0.5,sugar:0.5,sodium:16,iron:3.0,calcium:400,vitC:0,vitD:0,potassium:250},
+{name:"Tempeh",cat:"Plant",cal:192,pro:20,carb:8,fat:11,unit:"g",portion:150,fiber:0,sugar:0,sodium:9,iron:2.7,calcium:111,vitC:0,vitD:0,potassium:412},
+{name:"Seitan",cat:"Plant",cal:370,pro:75,carb:14,fat:2,unit:"g",portion:100,fiber:0.6,sugar:0,sodium:30,iron:5.2,calcium:50,vitC:0,vitD:0,potassium:100},
+{name:"Edamame",cat:"Plant",cal:122,pro:11,carb:10,fat:5,unit:"g",portion:150,fiber:5.2,sugar:2.2,sodium:6,iron:2.3,calcium:63,vitC:6,vitD:0,potassium:436},
+{name:"Lentils cooked",cat:"Plant",cal:116,pro:9,carb:20,fat:0.4,unit:"g",portion:200,fiber:7.9,sugar:1.8,sodium:2,iron:3.3,calcium:19,vitC:1.5,vitD:0,potassium:369},
+{name:"Red lentils cooked",cat:"Plant",cal:116,pro:9,carb:20,fat:0.4,unit:"g",portion:200,fiber:7.9,sugar:1.8,sodium:2,iron:3.3,calcium:19,vitC:1.5,vitD:0,potassium:369},
+{name:"Chickpeas cooked",cat:"Plant",cal:164,pro:9,carb:27,fat:2.6,unit:"g",portion:200,fiber:7.6,sugar:0,sodium:7,iron:2.9,calcium:49,vitC:1.3,vitD:0,potassium:291},
+{name:"Black beans cooked",cat:"Plant",cal:132,pro:9,carb:24,fat:0.5,unit:"g",portion:200,fiber:8.7,sugar:0.3,sodium:1,iron:2.1,calcium:27,vitC:0,vitD:0,potassium:355},
+{name:"Kidney beans cooked",cat:"Plant",cal:127,pro:9,carb:23,fat:0.5,unit:"g",portion:200,fiber:6.4,sugar:0,sodium:2,iron:2.9,calcium:28,vitC:1.2,vitD:0,potassium:403},
+{name:"White beans cooked",cat:"Plant",cal:139,pro:10,carb:25,fat:0.4,unit:"g",portion:200,fiber:6.3,sugar:0,sodium:6,iron:3.7,calcium:90,vitC:0,vitD:0,potassium:561},
+{name:"Pinto beans cooked",cat:"Plant",cal:143,pro:9,carb:26,fat:0.6,unit:"g",portion:200,fiber:9,sugar:0,sodium:1,iron:2.1,calcium:46,vitC:0.8,vitD:0,potassium:436},
+{name:"Soybeans cooked",cat:"Plant",cal:173,pro:17,carb:10,fat:9,unit:"g",portion:150,fiber:6,sugar:3,sodium:1,iron:5.1,calcium:102,vitC:2,vitD:0,potassium:515},
+{name:"Split peas cooked",cat:"Plant",cal:118,pro:8,carb:21,fat:0.4,unit:"g",portion:200,fiber:8.3,sugar:3,sodium:2,iron:1.3,calcium:14,vitC:0.4,vitD:0,potassium:362},
+{name:"Falafel",cat:"Plant",cal:333,pro:13,carb:32,fat:18,unit:"g",portion:50,pcs:"piece",pcsW:50,fiber:4,sugar:1,sodium:294,iron:1.8,calcium:30,vitC:2,vitD:0,potassium:200},
+{name:"Veggie burger patty",cat:"Plant",cal:200,pro:16,carb:14,fat:9,unit:"g",portion:100,pcs:"patty",pcsW:100,fiber:3.5,sugar:1,sodium:400,iron:2.5,calcium:80,vitC:0,vitD:0,potassium:200},
+{name:"Beyond Meat burger",cat:"Plant",cal:250,pro:20,carb:3,fat:18,unit:"g",portion:113,pcs:"patty",pcsW:113,fiber:2,sugar:0,sodium:390,iron:4.2,calcium:110,vitC:0,vitD:0,potassium:300},
+{name:"Impossible burger",cat:"Plant",cal:240,pro:19,carb:9,fat:14,unit:"g",portion:113,pcs:"patty",pcsW:113,fiber:3,sugar:0,sodium:370,iron:4.2,calcium:110,vitC:0,vitD:0,potassium:280},
+{name:"Peanut butter",cat:"Plant",cal:588,pro:25,carb:20,fat:50,unit:"g",portion:32,fiber:6,sugar:9,sodium:17,iron:1.7,calcium:43,vitC:0,vitD:0,potassium:649},
+{name:"Almond butter",cat:"Plant",cal:614,pro:21,carb:19,fat:56,unit:"g",portion:32,fiber:3.3,sugar:7,sodium:7,iron:3.0,calcium:270,vitC:0,vitD:0,potassium:748},
+{name:"Pea protein powder",cat:"Plant",cal:375,pro:80,carb:5,fat:5,unit:"g",portion:30,fiber:1,sugar:1,sodium:400,iron:7,calcium:30,vitC:0,vitD:0,potassium:100},
+{name:"Soy protein powder",cat:"Plant",cal:338,pro:80,carb:2,fat:1,unit:"g",portion:30,fiber:0,sugar:0,sodium:350,iron:7,calcium:130,vitC:0,vitD:0,potassium:200},
+{name:"Hummus",cat:"Plant",cal:166,pro:8,carb:14,fat:10,unit:"g",portion:60,fiber:6,sugar:0.3,sodium:379,iron:2.4,calcium:38,vitC:0,vitD:0,potassium:228},
 
 // ── Grains & Starches ──
-{name:"White rice cooked",cat:"Grains",cal:130,pro:2.7,carb:28,fat:0.3,unit:"g",portion:200},
-{name:"Brown rice cooked",cat:"Grains",cal:123,pro:2.7,carb:26,fat:1,unit:"g",portion:200},
-{name:"Basmati rice cooked",cat:"Grains",cal:121,pro:3,carb:25,fat:0.4,unit:"g",portion:200},
-{name:"Jasmine rice cooked",cat:"Grains",cal:129,pro:2.7,carb:28,fat:0.3,unit:"g",portion:200},
-{name:"Wild rice cooked",cat:"Grains",cal:101,pro:4,carb:21,fat:0.3,unit:"g",portion:200},
-{name:"Fried rice",cat:"Grains",cal:163,pro:4,carb:22,fat:6,unit:"g",portion:200},
-{name:"Quinoa cooked",cat:"Grains",cal:120,pro:4.4,carb:21,fat:1.9,unit:"g",portion:200},
-{name:"Pasta cooked",cat:"Grains",cal:131,pro:5,carb:25,fat:1.1,unit:"g",portion:200},
-{name:"Whole wheat pasta cooked",cat:"Grains",cal:124,pro:5.3,carb:24,fat:0.5,unit:"g",portion:200},
-{name:"Penne cooked",cat:"Grains",cal:131,pro:5,carb:25,fat:1.1,unit:"g",portion:200},
-{name:"Spaghetti cooked",cat:"Grains",cal:131,pro:5,carb:25,fat:1.1,unit:"g",portion:200},
-{name:"Egg noodles cooked",cat:"Grains",cal:138,pro:5,carb:25,fat:2,unit:"g",portion:200},
-{name:"Rice noodles cooked",cat:"Grains",cal:109,pro:0.9,carb:25,fat:0.2,unit:"g",portion:200},
-{name:"Ramen noodles",cat:"Grains",cal:138,pro:5,carb:25,fat:2,unit:"g",portion:200},
-{name:"Udon noodles cooked",cat:"Grains",cal:99,pro:3,carb:21,fat:0.2,unit:"g",portion:200},
-{name:"Soba noodles cooked",cat:"Grains",cal:99,pro:5,carb:22,fat:0.1,unit:"g",portion:200},
-{name:"Couscous cooked",cat:"Grains",cal:112,pro:3.8,carb:23,fat:0.2,unit:"g",portion:200},
-{name:"Bulgur cooked",cat:"Grains",cal:83,pro:3,carb:19,fat:0.2,unit:"g",portion:200},
-{name:"Polenta cooked",cat:"Grains",cal:70,pro:1.6,carb:15,fat:0.3,unit:"g",portion:200},
-{name:"Bread white",cat:"Grains",cal:265,pro:9,carb:49,fat:3.2,unit:"g",portion:30,pcs:"slice",pcsW:30},
-{name:"Bread whole wheat",cat:"Grains",cal:247,pro:13,carb:41,fat:3.4,unit:"g",portion:36,pcs:"slice",pcsW:36},
-{name:"Bread sourdough",cat:"Grains",cal:274,pro:10,carb:51,fat:3,unit:"g",portion:36,pcs:"slice",pcsW:36},
-{name:"Bread rye",cat:"Grains",cal:259,pro:9,carb:48,fat:3,unit:"g",portion:32,pcs:"slice",pcsW:32},
-{name:"Bread multigrain",cat:"Grains",cal:265,pro:13,carb:43,fat:4,unit:"g",portion:36,pcs:"slice",pcsW:36},
-{name:"Baguette",cat:"Grains",cal:274,pro:9,carb:56,fat:1,unit:"g",portion:60},
-{name:"Pita bread",cat:"Grains",cal:275,pro:9,carb:55,fat:1.2,unit:"g",portion:60,pcs:"pita",pcsW:60},
-{name:"Naan bread",cat:"Grains",cal:290,pro:9,carb:50,fat:5,unit:"g",portion:90,pcs:"naan",pcsW:90},
-{name:"Tortilla flour",cat:"Grains",cal:312,pro:8.3,carb:52,fat:8,unit:"g",portion:45},
-{name:"Tortilla corn",cat:"Grains",cal:218,pro:6,carb:44,fat:3,unit:"g",portion:26,pcs:"tortilla",pcsW:26},
-{name:"Tortilla wrap large",cat:"Grains",cal:312,pro:8,carb:52,fat:8,unit:"g",portion:70},
-{name:"Focaccia",cat:"Grains",cal:271,pro:7,carb:40,fat:9,unit:"g",portion:60},
-{name:"Ciabatta",cat:"Grains",cal:271,pro:9,carb:49,fat:4,unit:"g",portion:60},
-{name:"Croutons",cat:"Grains",cal:407,pro:11,carb:69,fat:10,unit:"g",portion:30},
-{name:"Sweet potato",cat:"Grains",cal:86,pro:1.6,carb:20,fat:0.1,unit:"g",portion:200},
-{name:"Sweet potato fries",cat:"Grains",cal:180,pro:2,carb:25,fat:8,unit:"g",portion:150},
-{name:"Potato boiled",cat:"Grains",cal:87,pro:1.9,carb:20,fat:0.1,unit:"g",portion:200},
-{name:"Potato baked",cat:"Grains",cal:93,pro:2.5,carb:21,fat:0.1,unit:"g",portion:200},
-{name:"Potato mashed",cat:"Grains",cal:113,pro:2,carb:16,fat:5,unit:"g",portion:200},
-{name:"French fries",cat:"Grains",cal:312,pro:3.4,carb:41,fat:15,unit:"g",portion:150},
-{name:"Hash browns",cat:"Grains",cal:210,pro:2.4,carb:25,fat:12,unit:"g",portion:100},
-{name:"Tater tots",cat:"Grains",cal:228,pro:2.5,carb:28,fat:12,unit:"g",portion:100},
-{name:"Gnocchi",cat:"Grains",cal:133,pro:3,carb:28,fat:1,unit:"g",portion:200},
+{name:"White rice cooked",cat:"Grains",cal:130,pro:2.7,carb:28,fat:0.3,unit:"g",portion:200,fiber:0.4,sugar:0,sodium:1,iron:1.2,calcium:10,vitC:0,vitD:0,potassium:35},
+{name:"Brown rice cooked",cat:"Grains",cal:123,pro:2.7,carb:26,fat:1,unit:"g",portion:200,fiber:1.8,sugar:0.4,sodium:5,iron:0.4,calcium:10,vitC:0,vitD:0,potassium:43},
+{name:"Basmati rice cooked",cat:"Grains",cal:121,pro:3,carb:25,fat:0.4,unit:"g",portion:200,fiber:0.4,sugar:0,sodium:1,iron:0.2,calcium:10,vitC:0,vitD:0,potassium:35},
+{name:"Jasmine rice cooked",cat:"Grains",cal:129,pro:2.7,carb:28,fat:0.3,unit:"g",portion:200,fiber:0.3,sugar:0,sodium:1,iron:1.2,calcium:10,vitC:0,vitD:0,potassium:35},
+{name:"Wild rice cooked",cat:"Grains",cal:101,pro:4,carb:21,fat:0.3,unit:"g",portion:200,fiber:1.8,sugar:0.7,sodium:3,iron:0.6,calcium:3,vitC:0,vitD:0,potassium:101},
+{name:"Fried rice",cat:"Grains",cal:163,pro:4,carb:22,fat:6,unit:"g",portion:200,fiber:0.8,sugar:1,sodium:490,iron:1.0,calcium:20,vitC:2,vitD:0.1,potassium:80},
+{name:"Quinoa cooked",cat:"Grains",cal:120,pro:4.4,carb:21,fat:1.9,unit:"g",portion:200,fiber:2.8,sugar:0.9,sodium:7,iron:1.5,calcium:17,vitC:0,vitD:0,potassium:172},
+{name:"Pasta cooked",cat:"Grains",cal:131,pro:5,carb:25,fat:1.1,unit:"g",portion:200,fiber:1.8,sugar:0.6,sodium:1,iron:1.3,calcium:7,vitC:0,vitD:0,potassium:44},
+{name:"Whole wheat pasta cooked",cat:"Grains",cal:124,pro:5.3,carb:24,fat:0.5,unit:"g",portion:200,fiber:3.9,sugar:0.6,sodium:3,iron:1.4,calcium:15,vitC:0,vitD:0,potassium:62},
+{name:"Penne cooked",cat:"Grains",cal:131,pro:5,carb:25,fat:1.1,unit:"g",portion:200,fiber:1.8,sugar:0.6,sodium:1,iron:1.3,calcium:7,vitC:0,vitD:0,potassium:44},
+{name:"Spaghetti cooked",cat:"Grains",cal:131,pro:5,carb:25,fat:1.1,unit:"g",portion:200,fiber:1.8,sugar:0.6,sodium:1,iron:1.3,calcium:7,vitC:0,vitD:0,potassium:44},
+{name:"Egg noodles cooked",cat:"Grains",cal:138,pro:5,carb:25,fat:2,unit:"g",portion:200,fiber:1.2,sugar:0.5,sodium:5,iron:1.5,calcium:10,vitC:0,vitD:0.1,potassium:38},
+{name:"Rice noodles cooked",cat:"Grains",cal:109,pro:0.9,carb:25,fat:0.2,unit:"g",portion:200,fiber:1,sugar:0,sodium:4,iron:0.1,calcium:4,vitC:0,vitD:0,potassium:4},
+{name:"Ramen noodles",cat:"Grains",cal:138,pro:5,carb:25,fat:2,unit:"g",portion:200,fiber:1,sugar:0.5,sodium:800,iron:1.5,calcium:10,vitC:0,vitD:0,potassium:38},
+{name:"Udon noodles cooked",cat:"Grains",cal:99,pro:3,carb:21,fat:0.2,unit:"g",portion:200,fiber:0.9,sugar:0.5,sodium:180,iron:0.5,calcium:8,vitC:0,vitD:0,potassium:30},
+{name:"Soba noodles cooked",cat:"Grains",cal:99,pro:5,carb:22,fat:0.1,unit:"g",portion:200,fiber:0.5,sugar:0.5,sodium:60,iron:0.8,calcium:5,vitC:0,vitD:0,potassium:35},
+{name:"Couscous cooked",cat:"Grains",cal:112,pro:3.8,carb:23,fat:0.2,unit:"g",portion:200,fiber:1,sugar:0.1,sodium:5,iron:0.4,calcium:8,vitC:0,vitD:0,potassium:58},
+{name:"Bulgur cooked",cat:"Grains",cal:83,pro:3,carb:19,fat:0.2,unit:"g",portion:200,fiber:4.5,sugar:0.1,sodium:5,iron:1.0,calcium:10,vitC:0,vitD:0,potassium:68},
+{name:"Polenta cooked",cat:"Grains",cal:70,pro:1.6,carb:15,fat:0.3,unit:"g",portion:200,fiber:1.4,sugar:0.2,sodium:225,iron:0.3,calcium:2,vitC:0,vitD:0,potassium:32},
+{name:"Bread white",cat:"Grains",cal:265,pro:9,carb:49,fat:3.2,unit:"g",portion:30,pcs:"slice",pcsW:30,fiber:2.7,sugar:5,sodium:481,iron:3.6,calcium:151,vitC:0,vitD:0,potassium:117},
+{name:"Bread whole wheat",cat:"Grains",cal:247,pro:13,carb:41,fat:3.4,unit:"g",portion:36,pcs:"slice",pcsW:36,fiber:6.8,sugar:3,sodium:460,iron:2.5,calcium:107,vitC:0,vitD:0,potassium:254},
+{name:"Bread sourdough",cat:"Grains",cal:274,pro:10,carb:51,fat:3,unit:"g",portion:36,pcs:"slice",pcsW:36,fiber:2.5,sugar:3,sodium:500,iron:3.0,calcium:50,vitC:0,vitD:0,potassium:120},
+{name:"Bread rye",cat:"Grains",cal:259,pro:9,carb:48,fat:3,unit:"g",portion:32,pcs:"slice",pcsW:32,fiber:5.8,sugar:4,sodium:603,iron:2.8,calcium:73,vitC:0,vitD:0,potassium:166},
+{name:"Bread multigrain",cat:"Grains",cal:265,pro:13,carb:43,fat:4,unit:"g",portion:36,pcs:"slice",pcsW:36,fiber:4,sugar:4,sodium:420,iron:2.5,calcium:85,vitC:0,vitD:0,potassium:200},
+{name:"Baguette",cat:"Grains",cal:274,pro:9,carb:56,fat:1,unit:"g",portion:60,fiber:2.4,sugar:3,sodium:602,iron:3.3,calcium:37,vitC:0,vitD:0,potassium:100},
+{name:"Pita bread",cat:"Grains",cal:275,pro:9,carb:55,fat:1.2,unit:"g",portion:60,pcs:"pita",pcsW:60,fiber:2.2,sugar:1,sodium:536,iron:2.6,calcium:86,vitC:0,vitD:0,potassium:120},
+{name:"Naan bread",cat:"Grains",cal:290,pro:9,carb:50,fat:5,unit:"g",portion:90,pcs:"naan",pcsW:90,fiber:2,sugar:3,sodium:418,iron:2.5,calcium:50,vitC:0,vitD:0,potassium:100},
+{name:"Tortilla flour",cat:"Grains",cal:312,pro:8.3,carb:52,fat:8,unit:"g",portion:45,fiber:2.4,sugar:2,sodium:490,iron:2.9,calcium:128,vitC:0,vitD:0,potassium:110},
+{name:"Tortilla corn",cat:"Grains",cal:218,pro:6,carb:44,fat:3,unit:"g",portion:26,pcs:"tortilla",pcsW:26,fiber:5.2,sugar:1,sodium:46,iron:1.0,calcium:46,vitC:0,vitD:0,potassium:156},
+{name:"Tortilla wrap large",cat:"Grains",cal:312,pro:8,carb:52,fat:8,unit:"g",portion:70,fiber:2.4,sugar:2,sodium:490,iron:2.9,calcium:128,vitC:0,vitD:0,potassium:110},
+{name:"Focaccia",cat:"Grains",cal:271,pro:7,carb:40,fat:9,unit:"g",portion:60,fiber:2,sugar:2,sodium:550,iron:2.5,calcium:30,vitC:0,vitD:0,potassium:90},
+{name:"Ciabatta",cat:"Grains",cal:271,pro:9,carb:49,fat:4,unit:"g",portion:60,fiber:2,sugar:2,sodium:480,iron:3,calcium:35,vitC:0,vitD:0,potassium:100},
+{name:"Croutons",cat:"Grains",cal:407,pro:11,carb:69,fat:10,unit:"g",portion:30,fiber:3,sugar:4,sodium:600,iron:3.5,calcium:40,vitC:0,vitD:0,potassium:100},
+{name:"Sweet potato",cat:"Grains",cal:86,pro:1.6,carb:20,fat:0.1,unit:"g",portion:200,fiber:3,sugar:4.2,sodium:55,iron:0.6,calcium:30,vitC:2.4,vitD:0,potassium:337},
+{name:"Sweet potato fries",cat:"Grains",cal:180,pro:2,carb:25,fat:8,unit:"g",portion:150,fiber:2.5,sugar:4,sodium:340,iron:0.5,calcium:25,vitC:1.5,vitD:0,potassium:250},
+{name:"Potato boiled",cat:"Grains",cal:87,pro:1.9,carb:20,fat:0.1,unit:"g",portion:200,fiber:1.8,sugar:0.9,sodium:5,iron:0.3,calcium:5,vitC:13,vitD:0,potassium:379},
+{name:"Potato baked",cat:"Grains",cal:93,pro:2.5,carb:21,fat:0.1,unit:"g",portion:200,fiber:2.2,sugar:1.2,sodium:10,iron:0.6,calcium:15,vitC:9.6,vitD:0,potassium:535},
+{name:"Potato mashed",cat:"Grains",cal:113,pro:2,carb:16,fat:5,unit:"g",portion:200,fiber:1.5,sugar:1.5,sodium:335,iron:0.3,calcium:30,vitC:6,vitD:0.1,potassium:284},
+{name:"French fries",cat:"Grains",cal:312,pro:3.4,carb:41,fat:15,unit:"g",portion:150,fiber:3.8,sugar:0.3,sodium:246,iron:0.8,calcium:15,vitC:5,vitD:0,potassium:451},
+{name:"Hash browns",cat:"Grains",cal:210,pro:2.4,carb:25,fat:12,unit:"g",portion:100,fiber:2,sugar:0.5,sodium:400,iron:0.5,calcium:10,vitC:3,vitD:0,potassium:300},
+{name:"Tater tots",cat:"Grains",cal:228,pro:2.5,carb:28,fat:12,unit:"g",portion:100,fiber:2,sugar:0.5,sodium:500,iron:0.6,calcium:10,vitC:3,vitD:0,potassium:250},
+{name:"Gnocchi",cat:"Grains",cal:133,pro:3,carb:28,fat:1,unit:"g",portion:200,fiber:1.5,sugar:1,sodium:350,iron:0.4,calcium:8,vitC:3,vitD:0,potassium:150},
 
 // ── Fruits ──
-{name:"Banana",cat:"Fruit",cal:89,pro:1.1,carb:23,fat:0.3,unit:"g",portion:120,pcs:"banana",pcsW:120},
-{name:"Apple",cat:"Fruit",cal:52,pro:0.3,carb:14,fat:0.2,unit:"g",portion:180,pcs:"apple",pcsW:180},
-{name:"Orange",cat:"Fruit",cal:47,pro:0.9,carb:12,fat:0.1,unit:"g",portion:150,pcs:"orange",pcsW:150},
-{name:"Blueberries",cat:"Fruit",cal:57,pro:0.7,carb:14,fat:0.3,unit:"g",portion:140},
-{name:"Strawberries",cat:"Fruit",cal:32,pro:0.7,carb:7.7,fat:0.3,unit:"g",portion:150},
-{name:"Raspberries",cat:"Fruit",cal:52,pro:1.2,carb:12,fat:0.7,unit:"g",portion:125},
-{name:"Blackberries",cat:"Fruit",cal:43,pro:1.4,carb:10,fat:0.5,unit:"g",portion:140},
-{name:"Cherries",cat:"Fruit",cal:63,pro:1.1,carb:16,fat:0.2,unit:"g",portion:140},
-{name:"Avocado",cat:"Fruit",cal:160,pro:2,carb:9,fat:15,unit:"g",portion:150,pcs:"avocado",pcsW:150},
-{name:"Mango",cat:"Fruit",cal:60,pro:0.8,carb:15,fat:0.4,unit:"g",portion:200},
-{name:"Grapes",cat:"Fruit",cal:69,pro:0.7,carb:18,fat:0.2,unit:"g",portion:150},
-{name:"Pineapple",cat:"Fruit",cal:50,pro:0.5,carb:13,fat:0.1,unit:"g",portion:150},
-{name:"Watermelon",cat:"Fruit",cal:30,pro:0.6,carb:8,fat:0.2,unit:"g",portion:200},
-{name:"Cantaloupe",cat:"Fruit",cal:34,pro:0.8,carb:8,fat:0.2,unit:"g",portion:200},
-{name:"Peach",cat:"Fruit",cal:39,pro:0.9,carb:10,fat:0.3,unit:"g",portion:150,pcs:"peach",pcsW:150},
-{name:"Pear",cat:"Fruit",cal:57,pro:0.4,carb:15,fat:0.1,unit:"g",portion:180,pcs:"pear",pcsW:180},
-{name:"Plum",cat:"Fruit",cal:46,pro:0.7,carb:11,fat:0.3,unit:"g",portion:66,pcs:"plum",pcsW:66},
-{name:"Kiwi",cat:"Fruit",cal:61,pro:1.1,carb:15,fat:0.5,unit:"g",portion:75,pcs:"kiwi",pcsW:75},
-{name:"Grapefruit",cat:"Fruit",cal:42,pro:0.8,carb:11,fat:0.1,unit:"g",portion:200},
-{name:"Papaya",cat:"Fruit",cal:43,pro:0.5,carb:11,fat:0.3,unit:"g",portion:200},
-{name:"Passion fruit",cat:"Fruit",cal:97,pro:2.2,carb:23,fat:0.7,unit:"g",portion:50},
-{name:"Pomegranate seeds",cat:"Fruit",cal:83,pro:1.7,carb:19,fat:1.2,unit:"g",portion:100},
-{name:"Lychee",cat:"Fruit",cal:66,pro:0.8,carb:17,fat:0.4,unit:"g",portion:100},
-{name:"Dates dried",cat:"Fruit",cal:277,pro:1.8,carb:75,fat:0.2,unit:"g",portion:30},
-{name:"Raisins",cat:"Fruit",cal:299,pro:3.1,carb:79,fat:0.5,unit:"g",portion:30},
-{name:"Dried cranberries",cat:"Fruit",cal:308,pro:0.1,carb:82,fat:1.4,unit:"g",portion:30},
-{name:"Applesauce",cat:"Fruit",cal:42,pro:0.2,carb:11,fat:0.1,unit:"g",portion:120},
-{name:"Plantain cooked",cat:"Fruit",cal:122,pro:1,carb:32,fat:0.2,unit:"g",portion:150},
-{name:"Coconut fresh",cat:"Fruit",cal:354,pro:3.3,carb:15,fat:33,unit:"g",portion:40},
-{name:"Coconut shredded",cat:"Fruit",cal:660,pro:6,carb:24,fat:64,unit:"g",portion:20},
+{name:"Banana",cat:"Fruit",cal:89,pro:1.1,carb:23,fat:0.3,unit:"g",portion:120,pcs:"banana",pcsW:120,fiber:2.6,sugar:12,sodium:1,iron:0.3,calcium:5,vitC:8.7,vitD:0,potassium:358},
+{name:"Apple",cat:"Fruit",cal:52,pro:0.3,carb:14,fat:0.2,unit:"g",portion:180,pcs:"apple",pcsW:180,fiber:2.4,sugar:10,sodium:1,iron:0.1,calcium:6,vitC:4.6,vitD:0,potassium:107},
+{name:"Orange",cat:"Fruit",cal:47,pro:0.9,carb:12,fat:0.1,unit:"g",portion:150,pcs:"orange",pcsW:150,fiber:2.4,sugar:9.4,sodium:0,iron:0.1,calcium:40,vitC:53,vitD:0,potassium:181},
+{name:"Blueberries",cat:"Fruit",cal:57,pro:0.7,carb:14,fat:0.3,unit:"g",portion:140,fiber:2.4,sugar:10,sodium:1,iron:0.3,calcium:6,vitC:9.7,vitD:0,potassium:77},
+{name:"Strawberries",cat:"Fruit",cal:32,pro:0.7,carb:7.7,fat:0.3,unit:"g",portion:150,fiber:2,sugar:4.9,sodium:1,iron:0.4,calcium:16,vitC:59,vitD:0,potassium:153},
+{name:"Raspberries",cat:"Fruit",cal:52,pro:1.2,carb:12,fat:0.7,unit:"g",portion:125,fiber:6.5,sugar:4.4,sodium:1,iron:0.7,calcium:25,vitC:26,vitD:0,potassium:151},
+{name:"Blackberries",cat:"Fruit",cal:43,pro:1.4,carb:10,fat:0.5,unit:"g",portion:140,fiber:5.3,sugar:4.9,sodium:1,iron:0.6,calcium:29,vitC:21,vitD:0,potassium:162},
+{name:"Cherries",cat:"Fruit",cal:63,pro:1.1,carb:16,fat:0.2,unit:"g",portion:140,fiber:2.1,sugar:13,sodium:0,iron:0.4,calcium:13,vitC:7,vitD:0,potassium:222},
+{name:"Avocado",cat:"Fruit",cal:160,pro:2,carb:9,fat:15,unit:"g",portion:150,pcs:"avocado",pcsW:150,fiber:6.7,sugar:0.7,sodium:7,iron:0.6,calcium:12,vitC:10,vitD:0,potassium:485},
+{name:"Mango",cat:"Fruit",cal:60,pro:0.8,carb:15,fat:0.4,unit:"g",portion:200,fiber:1.6,sugar:14,sodium:1,iron:0.2,calcium:11,vitC:36,vitD:0,potassium:168},
+{name:"Grapes",cat:"Fruit",cal:69,pro:0.7,carb:18,fat:0.2,unit:"g",portion:150,fiber:0.9,sugar:16,sodium:2,iron:0.4,calcium:10,vitC:3.2,vitD:0,potassium:191},
+{name:"Pineapple",cat:"Fruit",cal:50,pro:0.5,carb:13,fat:0.1,unit:"g",portion:150,fiber:1.4,sugar:10,sodium:1,iron:0.3,calcium:13,vitC:48,vitD:0,potassium:109},
+{name:"Watermelon",cat:"Fruit",cal:30,pro:0.6,carb:8,fat:0.2,unit:"g",portion:200,fiber:0.4,sugar:6.2,sodium:1,iron:0.2,calcium:7,vitC:8.1,vitD:0,potassium:112},
+{name:"Cantaloupe",cat:"Fruit",cal:34,pro:0.8,carb:8,fat:0.2,unit:"g",portion:200,fiber:0.9,sugar:8,sodium:16,iron:0.2,calcium:9,vitC:37,vitD:0,potassium:267},
+{name:"Peach",cat:"Fruit",cal:39,pro:0.9,carb:10,fat:0.3,unit:"g",portion:150,pcs:"peach",pcsW:150,fiber:1.5,sugar:8.4,sodium:0,iron:0.3,calcium:6,vitC:6.6,vitD:0,potassium:190},
+{name:"Pear",cat:"Fruit",cal:57,pro:0.4,carb:15,fat:0.1,unit:"g",portion:180,pcs:"pear",pcsW:180,fiber:3.1,sugar:10,sodium:1,iron:0.2,calcium:9,vitC:4.3,vitD:0,potassium:116},
+{name:"Plum",cat:"Fruit",cal:46,pro:0.7,carb:11,fat:0.3,unit:"g",portion:66,pcs:"plum",pcsW:66,fiber:1.4,sugar:10,sodium:0,iron:0.2,calcium:6,vitC:9.5,vitD:0,potassium:157},
+{name:"Kiwi",cat:"Fruit",cal:61,pro:1.1,carb:15,fat:0.5,unit:"g",portion:75,pcs:"kiwi",pcsW:75,fiber:3,sugar:9,sodium:3,iron:0.3,calcium:34,vitC:93,vitD:0,potassium:312},
+{name:"Grapefruit",cat:"Fruit",cal:42,pro:0.8,carb:11,fat:0.1,unit:"g",portion:200,fiber:1.6,sugar:7,sodium:0,iron:0.1,calcium:22,vitC:31,vitD:0,potassium:135},
+{name:"Papaya",cat:"Fruit",cal:43,pro:0.5,carb:11,fat:0.3,unit:"g",portion:200,fiber:1.7,sugar:8,sodium:8,iron:0.3,calcium:20,vitC:61,vitD:0,potassium:182},
+{name:"Passion fruit",cat:"Fruit",cal:97,pro:2.2,carb:23,fat:0.7,unit:"g",portion:50,fiber:10,sugar:11,sodium:28,iron:1.6,calcium:12,vitC:30,vitD:0,potassium:348},
+{name:"Pomegranate seeds",cat:"Fruit",cal:83,pro:1.7,carb:19,fat:1.2,unit:"g",portion:100,fiber:4,sugar:14,sodium:3,iron:0.3,calcium:10,vitC:10,vitD:0,potassium:236},
+{name:"Lychee",cat:"Fruit",cal:66,pro:0.8,carb:17,fat:0.4,unit:"g",portion:100,fiber:1.3,sugar:15,sodium:1,iron:0.3,calcium:5,vitC:72,vitD:0,potassium:171},
+{name:"Dates dried",cat:"Fruit",cal:277,pro:1.8,carb:75,fat:0.2,unit:"g",portion:30,fiber:6.7,sugar:66,sodium:1,iron:0.9,calcium:64,vitC:0,vitD:0,potassium:696},
+{name:"Raisins",cat:"Fruit",cal:299,pro:3.1,carb:79,fat:0.5,unit:"g",portion:30,fiber:3.7,sugar:59,sodium:11,iron:1.9,calcium:50,vitC:2.3,vitD:0,potassium:749},
+{name:"Dried cranberries",cat:"Fruit",cal:308,pro:0.1,carb:82,fat:1.4,unit:"g",portion:30,fiber:5,sugar:65,sodium:3,iron:0.4,calcium:10,vitC:0.2,vitD:0,potassium:40},
+{name:"Applesauce",cat:"Fruit",cal:42,pro:0.2,carb:11,fat:0.1,unit:"g",portion:120,fiber:1,sugar:9.4,sodium:2,iron:0.1,calcium:4,vitC:1.2,vitD:0,potassium:74},
+{name:"Plantain cooked",cat:"Fruit",cal:122,pro:1,carb:32,fat:0.2,unit:"g",portion:150,fiber:1.8,sugar:14,sodium:5,iron:0.6,calcium:3,vitC:11,vitD:0,potassium:465},
+{name:"Coconut fresh",cat:"Fruit",cal:354,pro:3.3,carb:15,fat:33,unit:"g",portion:40,fiber:9,sugar:6,sodium:20,iron:2.4,calcium:14,vitC:3.3,vitD:0,potassium:356},
+{name:"Coconut shredded",cat:"Fruit",cal:660,pro:6,carb:24,fat:64,unit:"g",portion:20,fiber:16,sugar:6,sodium:18,iron:3.3,calcium:14,vitC:1,vitD:0,potassium:543},
 
 // ── Vegetables ──
-{name:"Broccoli",cat:"Veg",cal:34,pro:2.8,carb:7,fat:0.4,unit:"g",portion:150},
-{name:"Broccoli steamed",cat:"Veg",cal:35,pro:2.4,carb:7,fat:0.4,unit:"g",portion:150},
-{name:"Spinach raw",cat:"Veg",cal:23,pro:2.9,carb:3.6,fat:0.4,unit:"g",portion:60},
-{name:"Spinach cooked",cat:"Veg",cal:23,pro:3,carb:3.8,fat:0.3,unit:"g",portion:150},
-{name:"Kale",cat:"Veg",cal:49,pro:4.3,carb:9,fat:0.9,unit:"g",portion:60},
-{name:"Mixed salad greens",cat:"Veg",cal:20,pro:1.5,carb:3.5,fat:0.3,unit:"g",portion:80},
-{name:"Lettuce romaine",cat:"Veg",cal:17,pro:1.2,carb:3.3,fat:0.3,unit:"g",portion:80},
-{name:"Arugula",cat:"Veg",cal:25,pro:2.6,carb:3.7,fat:0.7,unit:"g",portion:40},
-{name:"Tomato",cat:"Veg",cal:18,pro:0.9,carb:3.9,fat:0.2,unit:"g",portion:120},
-{name:"Cherry tomatoes",cat:"Veg",cal:18,pro:0.9,carb:3.9,fat:0.2,unit:"g",portion:100},
-{name:"Sun-dried tomatoes",cat:"Veg",cal:258,pro:14,carb:56,fat:3,unit:"g",portion:20},
-{name:"Bell pepper red",cat:"Veg",cal:31,pro:1,carb:6,fat:0.3,unit:"g",portion:120},
-{name:"Bell pepper green",cat:"Veg",cal:20,pro:0.9,carb:4.6,fat:0.2,unit:"g",portion:120},
-{name:"Jalapeño",cat:"Veg",cal:29,pro:0.9,carb:6,fat:0.4,unit:"g",portion:30},
-{name:"Carrot",cat:"Veg",cal:41,pro:0.9,carb:10,fat:0.2,unit:"g",portion:80},
-{name:"Cucumber",cat:"Veg",cal:15,pro:0.7,carb:3.6,fat:0.1,unit:"g",portion:100},
-{name:"Celery",cat:"Veg",cal:14,pro:0.7,carb:3,fat:0.2,unit:"g",portion:100},
-{name:"Zucchini",cat:"Veg",cal:17,pro:1.2,carb:3.1,fat:0.3,unit:"g",portion:200},
-{name:"Eggplant",cat:"Veg",cal:25,pro:1,carb:6,fat:0.2,unit:"g",portion:200},
-{name:"Green beans",cat:"Veg",cal:31,pro:1.8,carb:7,fat:0.1,unit:"g",portion:125},
-{name:"Mushrooms white",cat:"Veg",cal:22,pro:3.1,carb:3.3,fat:0.3,unit:"g",portion:100},
-{name:"Mushrooms portobello",cat:"Veg",cal:22,pro:2.1,carb:3.9,fat:0.4,unit:"g",portion:120},
-{name:"Mushrooms shiitake",cat:"Veg",cal:34,pro:2.2,carb:7,fat:0.5,unit:"g",portion:80},
-{name:"Corn",cat:"Veg",cal:96,pro:3.4,carb:21,fat:1.5,unit:"g",portion:150},
-{name:"Corn on the cob",cat:"Veg",cal:96,pro:3.4,carb:21,fat:1.5,unit:"g",portion:150,pcs:"ear",pcsW:150},
-{name:"Peas",cat:"Veg",cal:81,pro:5.4,carb:14,fat:0.4,unit:"g",portion:100},
-{name:"Asparagus",cat:"Veg",cal:20,pro:2.2,carb:3.9,fat:0.1,unit:"g",portion:120},
-{name:"Cauliflower",cat:"Veg",cal:25,pro:1.9,carb:5,fat:0.3,unit:"g",portion:150},
-{name:"Brussels sprouts",cat:"Veg",cal:43,pro:3.4,carb:9,fat:0.3,unit:"g",portion:150},
-{name:"Cabbage",cat:"Veg",cal:25,pro:1.3,carb:6,fat:0.1,unit:"g",portion:100},
-{name:"Red cabbage",cat:"Veg",cal:31,pro:1.4,carb:7,fat:0.2,unit:"g",portion:100},
-{name:"Onion",cat:"Veg",cal:40,pro:1.1,carb:9,fat:0.1,unit:"g",portion:100},
-{name:"Green onion",cat:"Veg",cal:32,pro:1.8,carb:7,fat:0.2,unit:"g",portion:30},
-{name:"Garlic",cat:"Veg",cal:149,pro:6.4,carb:33,fat:0.5,unit:"g",portion:5},
-{name:"Ginger root",cat:"Veg",cal:80,pro:1.8,carb:18,fat:0.8,unit:"g",portion:10},
-{name:"Beet",cat:"Veg",cal:43,pro:1.6,carb:10,fat:0.2,unit:"g",portion:150},
-{name:"Radish",cat:"Veg",cal:16,pro:0.7,carb:3.4,fat:0.1,unit:"g",portion:50},
-{name:"Turnip",cat:"Veg",cal:28,pro:0.9,carb:6,fat:0.1,unit:"g",portion:100},
-{name:"Artichoke",cat:"Veg",cal:47,pro:3.3,carb:11,fat:0.2,unit:"g",portion:120},
-{name:"Okra",cat:"Veg",cal:33,pro:1.9,carb:7,fat:0.2,unit:"g",portion:100},
-{name:"Leek",cat:"Veg",cal:61,pro:1.5,carb:14,fat:0.3,unit:"g",portion:100},
-{name:"Fennel",cat:"Veg",cal:31,pro:1.2,carb:7,fat:0.2,unit:"g",portion:100},
-{name:"Butternut squash",cat:"Veg",cal:45,pro:1,carb:12,fat:0.1,unit:"g",portion:200},
-{name:"Acorn squash",cat:"Veg",cal:40,pro:0.8,carb:10,fat:0.1,unit:"g",portion:200},
-{name:"Spaghetti squash",cat:"Veg",cal:31,pro:0.6,carb:7,fat:0.6,unit:"g",portion:200},
-{name:"Pumpkin",cat:"Veg",cal:26,pro:1,carb:7,fat:0.1,unit:"g",portion:200},
-{name:"Kimchi",cat:"Veg",cal:15,pro:1.1,carb:2.4,fat:0.5,unit:"g",portion:80},
-{name:"Sauerkraut",cat:"Veg",cal:19,pro:0.9,carb:4,fat:0.1,unit:"g",portion:75},
-{name:"Pickles",cat:"Veg",cal:11,pro:0.3,carb:2.3,fat:0.2,unit:"g",portion:65},
-{name:"Olives black",cat:"Veg",cal:115,pro:0.8,carb:6,fat:11,unit:"g",portion:30},
-{name:"Olives green",cat:"Veg",cal:145,pro:1,carb:4,fat:15,unit:"g",portion:30},
-{name:"Coleslaw",cat:"Veg",cal:99,pro:1,carb:12,fat:6,unit:"g",portion:100},
+{name:"Broccoli",cat:"Veg",cal:34,pro:2.8,carb:7,fat:0.4,unit:"g",portion:150,fiber:2.6,sugar:1.7,sodium:33,iron:0.7,calcium:47,vitC:89,vitD:0,potassium:316},
+{name:"Broccoli steamed",cat:"Veg",cal:35,pro:2.4,carb:7,fat:0.4,unit:"g",portion:150,fiber:3.3,sugar:1.4,sodium:41,iron:0.7,calcium:40,vitC:65,vitD:0,potassium:293},
+{name:"Spinach raw",cat:"Veg",cal:23,pro:2.9,carb:3.6,fat:0.4,unit:"g",portion:60,fiber:2.2,sugar:0.4,sodium:79,iron:2.7,calcium:99,vitC:28,vitD:0,potassium:558},
+{name:"Spinach cooked",cat:"Veg",cal:23,pro:3,carb:3.8,fat:0.3,unit:"g",portion:150,fiber:2.4,sugar:0.5,sodium:70,iron:3.6,calcium:136,vitC:10,vitD:0,potassium:466},
+{name:"Kale",cat:"Veg",cal:49,pro:4.3,carb:9,fat:0.9,unit:"g",portion:60,fiber:3.6,sugar:2.3,sodium:38,iron:1.5,calcium:150,vitC:120,vitD:0,potassium:491},
+{name:"Mixed salad greens",cat:"Veg",cal:20,pro:1.5,carb:3.5,fat:0.3,unit:"g",portion:80,fiber:1.5,sugar:1,sodium:30,iron:1.5,calcium:60,vitC:20,vitD:0,potassium:300},
+{name:"Lettuce romaine",cat:"Veg",cal:17,pro:1.2,carb:3.3,fat:0.3,unit:"g",portion:80,fiber:2.1,sugar:1.2,sodium:8,iron:1.0,calcium:33,vitC:24,vitD:0,potassium:247},
+{name:"Arugula",cat:"Veg",cal:25,pro:2.6,carb:3.7,fat:0.7,unit:"g",portion:40,fiber:1.6,sugar:2,sodium:27,iron:1.5,calcium:160,vitC:15,vitD:0,potassium:369},
+{name:"Tomato",cat:"Veg",cal:18,pro:0.9,carb:3.9,fat:0.2,unit:"g",portion:120,fiber:1.2,sugar:2.6,sodium:5,iron:0.3,calcium:10,vitC:14,vitD:0,potassium:237},
+{name:"Cherry tomatoes",cat:"Veg",cal:18,pro:0.9,carb:3.9,fat:0.2,unit:"g",portion:100,fiber:1.2,sugar:2.6,sodium:5,iron:0.3,calcium:10,vitC:14,vitD:0,potassium:237},
+{name:"Sun-dried tomatoes",cat:"Veg",cal:258,pro:14,carb:56,fat:3,unit:"g",portion:20,fiber:12,sugar:38,sodium:107,iron:9.1,calcium:110,vitC:39,vitD:0,potassium:3427},
+{name:"Bell pepper red",cat:"Veg",cal:31,pro:1,carb:6,fat:0.3,unit:"g",portion:120,fiber:2.1,sugar:4.2,sodium:4,iron:0.4,calcium:7,vitC:128,vitD:0,potassium:211},
+{name:"Bell pepper green",cat:"Veg",cal:20,pro:0.9,carb:4.6,fat:0.2,unit:"g",portion:120,fiber:1.7,sugar:2.4,sodium:3,iron:0.3,calcium:10,vitC:80,vitD:0,potassium:175},
+{name:"Jalapeño",cat:"Veg",cal:29,pro:0.9,carb:6,fat:0.4,unit:"g",portion:30,fiber:2.8,sugar:4.1,sodium:3,iron:0.3,calcium:12,vitC:119,vitD:0,potassium:248},
+{name:"Carrot",cat:"Veg",cal:41,pro:0.9,carb:10,fat:0.2,unit:"g",portion:80,fiber:2.8,sugar:4.7,sodium:69,iron:0.3,calcium:33,vitC:5.9,vitD:0,potassium:320},
+{name:"Cucumber",cat:"Veg",cal:15,pro:0.7,carb:3.6,fat:0.1,unit:"g",portion:100,fiber:0.5,sugar:1.7,sodium:2,iron:0.3,calcium:16,vitC:2.8,vitD:0,potassium:147},
+{name:"Celery",cat:"Veg",cal:14,pro:0.7,carb:3,fat:0.2,unit:"g",portion:100,fiber:1.6,sugar:1.3,sodium:80,iron:0.2,calcium:40,vitC:3.1,vitD:0,potassium:260},
+{name:"Zucchini",cat:"Veg",cal:17,pro:1.2,carb:3.1,fat:0.3,unit:"g",portion:200,fiber:1,sugar:2.5,sodium:8,iron:0.4,calcium:16,vitC:18,vitD:0,potassium:261},
+{name:"Eggplant",cat:"Veg",cal:25,pro:1,carb:6,fat:0.2,unit:"g",portion:200,fiber:3,sugar:3.5,sodium:2,iron:0.2,calcium:9,vitC:2.2,vitD:0,potassium:229},
+{name:"Green beans",cat:"Veg",cal:31,pro:1.8,carb:7,fat:0.1,unit:"g",portion:125,fiber:3.4,sugar:3.3,sodium:6,iron:1.0,calcium:37,vitC:12,vitD:0,potassium:211},
+{name:"Mushrooms white",cat:"Veg",cal:22,pro:3.1,carb:3.3,fat:0.3,unit:"g",portion:100,fiber:1,sugar:2,sodium:5,iron:0.5,calcium:3,vitC:2.1,vitD:0.2,potassium:318},
+{name:"Mushrooms portobello",cat:"Veg",cal:22,pro:2.1,carb:3.9,fat:0.4,unit:"g",portion:120,fiber:1.3,sugar:2.5,sodium:9,iron:0.3,calcium:3,vitC:0,vitD:0.3,potassium:364},
+{name:"Mushrooms shiitake",cat:"Veg",cal:34,pro:2.2,carb:7,fat:0.5,unit:"g",portion:80,fiber:2.5,sugar:2.4,sodium:9,iron:0.4,calcium:2,vitC:0,vitD:0.4,potassium:304},
+{name:"Corn",cat:"Veg",cal:96,pro:3.4,carb:21,fat:1.5,unit:"g",portion:150,fiber:2.7,sugar:6.3,sodium:15,iron:0.5,calcium:2,vitC:6.8,vitD:0,potassium:270},
+{name:"Corn on the cob",cat:"Veg",cal:96,pro:3.4,carb:21,fat:1.5,unit:"g",portion:150,pcs:"ear",pcsW:150,fiber:2.7,sugar:6.3,sodium:15,iron:0.5,calcium:2,vitC:6.8,vitD:0,potassium:270},
+{name:"Peas",cat:"Veg",cal:81,pro:5.4,carb:14,fat:0.4,unit:"g",portion:100,fiber:5.7,sugar:5.7,sodium:5,iron:1.5,calcium:25,vitC:40,vitD:0,potassium:244},
+{name:"Asparagus",cat:"Veg",cal:20,pro:2.2,carb:3.9,fat:0.1,unit:"g",portion:120,fiber:2.1,sugar:1.9,sodium:2,iron:2.1,calcium:24,vitC:5.6,vitD:0,potassium:202},
+{name:"Cauliflower",cat:"Veg",cal:25,pro:1.9,carb:5,fat:0.3,unit:"g",portion:150,fiber:2,sugar:1.9,sodium:30,iron:0.4,calcium:22,vitC:48,vitD:0,potassium:299},
+{name:"Brussels sprouts",cat:"Veg",cal:43,pro:3.4,carb:9,fat:0.3,unit:"g",portion:150,fiber:3.8,sugar:2.2,sodium:25,iron:1.4,calcium:42,vitC:85,vitD:0,potassium:389},
+{name:"Cabbage",cat:"Veg",cal:25,pro:1.3,carb:6,fat:0.1,unit:"g",portion:100,fiber:2.5,sugar:3.2,sodium:18,iron:0.5,calcium:40,vitC:37,vitD:0,potassium:170},
+{name:"Red cabbage",cat:"Veg",cal:31,pro:1.4,carb:7,fat:0.2,unit:"g",portion:100,fiber:2.1,sugar:3.8,sodium:27,iron:0.8,calcium:45,vitC:57,vitD:0,potassium:243},
+{name:"Onion",cat:"Veg",cal:40,pro:1.1,carb:9,fat:0.1,unit:"g",portion:100,fiber:1.7,sugar:4.2,sodium:4,iron:0.2,calcium:23,vitC:7.4,vitD:0,potassium:146},
+{name:"Green onion",cat:"Veg",cal:32,pro:1.8,carb:7,fat:0.2,unit:"g",portion:30,fiber:2.6,sugar:2.3,sodium:16,iron:1.5,calcium:72,vitC:19,vitD:0,potassium:276},
+{name:"Garlic",cat:"Veg",cal:149,pro:6.4,carb:33,fat:0.5,unit:"g",portion:5,fiber:2.1,sugar:1,sodium:17,iron:1.7,calcium:181,vitC:31,vitD:0,potassium:401},
+{name:"Ginger root",cat:"Veg",cal:80,pro:1.8,carb:18,fat:0.8,unit:"g",portion:10,fiber:2,sugar:1.7,sodium:13,iron:0.6,calcium:16,vitC:5,vitD:0,potassium:415},
+{name:"Beet",cat:"Veg",cal:43,pro:1.6,carb:10,fat:0.2,unit:"g",portion:150,fiber:2.8,sugar:7,sodium:78,iron:0.8,calcium:16,vitC:4.9,vitD:0,potassium:325},
+{name:"Radish",cat:"Veg",cal:16,pro:0.7,carb:3.4,fat:0.1,unit:"g",portion:50,fiber:1.6,sugar:1.9,sodium:39,iron:0.3,calcium:25,vitC:15,vitD:0,potassium:233},
+{name:"Turnip",cat:"Veg",cal:28,pro:0.9,carb:6,fat:0.1,unit:"g",portion:100,fiber:1.8,sugar:3.8,sodium:67,iron:0.3,calcium:30,vitC:21,vitD:0,potassium:191},
+{name:"Artichoke",cat:"Veg",cal:47,pro:3.3,carb:11,fat:0.2,unit:"g",portion:120,fiber:5.4,sugar:1,sodium:94,iron:1.3,calcium:44,vitC:12,vitD:0,potassium:370},
+{name:"Okra",cat:"Veg",cal:33,pro:1.9,carb:7,fat:0.2,unit:"g",portion:100,fiber:3.2,sugar:1.5,sodium:7,iron:0.6,calcium:82,vitC:23,vitD:0,potassium:299},
+{name:"Leek",cat:"Veg",cal:61,pro:1.5,carb:14,fat:0.3,unit:"g",portion:100,fiber:1.8,sugar:3.9,sodium:20,iron:2.1,calcium:59,vitC:12,vitD:0,potassium:180},
+{name:"Fennel",cat:"Veg",cal:31,pro:1.2,carb:7,fat:0.2,unit:"g",portion:100,fiber:3.1,sugar:3.9,sodium:52,iron:0.7,calcium:49,vitC:12,vitD:0,potassium:414},
+{name:"Butternut squash",cat:"Veg",cal:45,pro:1,carb:12,fat:0.1,unit:"g",portion:200,fiber:2,sugar:2.2,sodium:4,iron:0.7,calcium:48,vitC:21,vitD:0,potassium:352},
+{name:"Acorn squash",cat:"Veg",cal:40,pro:0.8,carb:10,fat:0.1,unit:"g",portion:200,fiber:1.5,sugar:0,sodium:4,iron:0.7,calcium:33,vitC:11,vitD:0,potassium:347},
+{name:"Spaghetti squash",cat:"Veg",cal:31,pro:0.6,carb:7,fat:0.6,unit:"g",portion:200,fiber:1.5,sugar:2.5,sodium:17,iron:0.3,calcium:23,vitC:2.1,vitD:0,potassium:108},
+{name:"Pumpkin",cat:"Veg",cal:26,pro:1,carb:7,fat:0.1,unit:"g",portion:200,fiber:0.5,sugar:2.8,sodium:1,iron:0.8,calcium:21,vitC:9,vitD:0,potassium:340},
+{name:"Kimchi",cat:"Veg",cal:15,pro:1.1,carb:2.4,fat:0.5,unit:"g",portion:80,fiber:1.6,sugar:1.1,sodium:498,iron:0.5,calcium:33,vitC:0,vitD:0,potassium:151},
+{name:"Sauerkraut",cat:"Veg",cal:19,pro:0.9,carb:4,fat:0.1,unit:"g",portion:75,fiber:2.9,sugar:1.8,sodium:661,iron:1.5,calcium:30,vitC:15,vitD:0,potassium:170},
+{name:"Pickles",cat:"Veg",cal:11,pro:0.3,carb:2.3,fat:0.2,unit:"g",portion:65,fiber:1.2,sugar:1.1,sodium:1208,iron:0.4,calcium:5,vitC:1,vitD:0,potassium:23},
+{name:"Olives black",cat:"Veg",cal:115,pro:0.8,carb:6,fat:11,unit:"g",portion:30,fiber:3.2,sugar:0,sodium:735,iron:3.3,calcium:88,vitC:0,vitD:0,potassium:8},
+{name:"Olives green",cat:"Veg",cal:145,pro:1,carb:4,fat:15,unit:"g",portion:30,fiber:3.3,sugar:0,sodium:1556,iron:0.5,calcium:52,vitC:0,vitD:0,potassium:42},
+{name:"Coleslaw",cat:"Veg",cal:99,pro:1,carb:12,fat:6,unit:"g",portion:100,fiber:1.5,sugar:8,sodium:180,iron:0.4,calcium:30,vitC:15,vitD:0,potassium:130},
 
 // ── Nuts & Seeds ──
-{name:"Almonds",cat:"Nuts",cal:579,pro:21,carb:22,fat:50,unit:"g",portion:30},
-{name:"Walnuts",cat:"Nuts",cal:654,pro:15,carb:14,fat:65,unit:"g",portion:30},
-{name:"Cashews",cat:"Nuts",cal:553,pro:18,carb:30,fat:44,unit:"g",portion:30},
-{name:"Pistachios",cat:"Nuts",cal:560,pro:20,carb:28,fat:45,unit:"g",portion:30},
-{name:"Peanuts",cat:"Nuts",cal:567,pro:26,carb:16,fat:49,unit:"g",portion:30},
-{name:"Pecans",cat:"Nuts",cal:691,pro:9,carb:14,fat:72,unit:"g",portion:30},
-{name:"Macadamia nuts",cat:"Nuts",cal:718,pro:8,carb:14,fat:76,unit:"g",portion:30},
-{name:"Brazil nuts",cat:"Nuts",cal:659,pro:14,carb:12,fat:67,unit:"g",portion:30},
-{name:"Hazelnuts",cat:"Nuts",cal:628,pro:15,carb:17,fat:61,unit:"g",portion:30},
-{name:"Pine nuts",cat:"Nuts",cal:673,pro:14,carb:13,fat:68,unit:"g",portion:20},
-{name:"Mixed nuts",cat:"Nuts",cal:607,pro:17,carb:22,fat:54,unit:"g",portion:30},
-{name:"Chia seeds",cat:"Nuts",cal:486,pro:17,carb:42,fat:31,unit:"g",portion:20},
-{name:"Flaxseeds",cat:"Nuts",cal:534,pro:18,carb:29,fat:42,unit:"g",portion:15},
-{name:"Pumpkin seeds",cat:"Nuts",cal:559,pro:30,carb:11,fat:49,unit:"g",portion:30},
-{name:"Sunflower seeds",cat:"Nuts",cal:584,pro:21,carb:20,fat:51,unit:"g",portion:30},
-{name:"Hemp seeds",cat:"Nuts",cal:553,pro:32,carb:8.7,fat:49,unit:"g",portion:30},
-{name:"Sesame seeds",cat:"Nuts",cal:573,pro:18,carb:23,fat:50,unit:"g",portion:15},
-{name:"Tahini",cat:"Nuts",cal:595,pro:17,carb:22,fat:54,unit:"g",portion:15},
-{name:"Coconut flakes",cat:"Nuts",cal:660,pro:6,carb:24,fat:64,unit:"g",portion:20},
+{name:"Almonds",cat:"Nuts",cal:579,pro:21,carb:22,fat:50,unit:"g",portion:30,fiber:12.5,sugar:4.4,sodium:1,iron:3.7,calcium:269,vitC:0,vitD:0,potassium:733},
+{name:"Walnuts",cat:"Nuts",cal:654,pro:15,carb:14,fat:65,unit:"g",portion:30,fiber:6.7,sugar:2.6,sodium:2,iron:2.9,calcium:98,vitC:1.3,vitD:0,potassium:441},
+{name:"Cashews",cat:"Nuts",cal:553,pro:18,carb:30,fat:44,unit:"g",portion:30,fiber:3.3,sugar:5.9,sodium:12,iron:6.7,calcium:37,vitC:0.5,vitD:0,potassium:660},
+{name:"Pistachios",cat:"Nuts",cal:560,pro:20,carb:28,fat:45,unit:"g",portion:30,fiber:10,sugar:7.7,sodium:1,iron:3.9,calcium:105,vitC:5.6,vitD:0,potassium:1025},
+{name:"Peanuts",cat:"Nuts",cal:567,pro:26,carb:16,fat:49,unit:"g",portion:30,fiber:8.5,sugar:4,sodium:18,iron:4.6,calcium:92,vitC:0,vitD:0,potassium:705},
+{name:"Pecans",cat:"Nuts",cal:691,pro:9,carb:14,fat:72,unit:"g",portion:30,fiber:9.6,sugar:4,sodium:0,iron:2.5,calcium:70,vitC:1.1,vitD:0,potassium:410},
+{name:"Macadamia nuts",cat:"Nuts",cal:718,pro:8,carb:14,fat:76,unit:"g",portion:30,fiber:8.6,sugar:4.6,sodium:5,iron:3.7,calcium:85,vitC:1.2,vitD:0,potassium:368},
+{name:"Brazil nuts",cat:"Nuts",cal:659,pro:14,carb:12,fat:67,unit:"g",portion:30,fiber:7.5,sugar:2.3,sodium:3,iron:2.4,calcium:160,vitC:0.7,vitD:0,potassium:659},
+{name:"Hazelnuts",cat:"Nuts",cal:628,pro:15,carb:17,fat:61,unit:"g",portion:30,fiber:9.7,sugar:4.3,sodium:0,iron:4.7,calcium:114,vitC:6.3,vitD:0,potassium:680},
+{name:"Pine nuts",cat:"Nuts",cal:673,pro:14,carb:13,fat:68,unit:"g",portion:20,fiber:3.7,sugar:3.6,sodium:2,iron:5.5,calcium:16,vitC:0.8,vitD:0,potassium:597},
+{name:"Mixed nuts",cat:"Nuts",cal:607,pro:17,carb:22,fat:54,unit:"g",portion:30,fiber:6,sugar:4.5,sodium:150,iron:3.0,calcium:80,vitC:0.5,vitD:0,potassium:550},
+{name:"Chia seeds",cat:"Nuts",cal:486,pro:17,carb:42,fat:31,unit:"g",portion:20,fiber:34,sugar:0,sodium:16,iron:7.7,calcium:631,vitC:1.6,vitD:0,potassium:407},
+{name:"Flaxseeds",cat:"Nuts",cal:534,pro:18,carb:29,fat:42,unit:"g",portion:15,fiber:27,sugar:1.6,sodium:30,iron:5.7,calcium:255,vitC:0.6,vitD:0,potassium:813},
+{name:"Pumpkin seeds",cat:"Nuts",cal:559,pro:30,carb:11,fat:49,unit:"g",portion:30,fiber:6,sugar:1.4,sodium:7,iron:8.8,calcium:46,vitC:1.9,vitD:0,potassium:809},
+{name:"Sunflower seeds",cat:"Nuts",cal:584,pro:21,carb:20,fat:51,unit:"g",portion:30,fiber:8.6,sugar:2.6,sodium:9,iron:5.3,calcium:78,vitC:1.4,vitD:0,potassium:645},
+{name:"Hemp seeds",cat:"Nuts",cal:553,pro:32,carb:8.7,fat:49,unit:"g",portion:30,fiber:4,sugar:1.5,sodium:5,iron:7.9,calcium:70,vitC:0.5,vitD:0,potassium:1200},
+{name:"Sesame seeds",cat:"Nuts",cal:573,pro:18,carb:23,fat:50,unit:"g",portion:15,fiber:11.8,sugar:0.3,sodium:11,iron:14.6,calcium:975,vitC:0,vitD:0,potassium:468},
+{name:"Tahini",cat:"Nuts",cal:595,pro:17,carb:22,fat:54,unit:"g",portion:15,fiber:9.3,sugar:0.5,sodium:70,iron:8.9,calcium:426,vitC:0,vitD:0,potassium:414},
+{name:"Coconut flakes",cat:"Nuts",cal:660,pro:6,carb:24,fat:64,unit:"g",portion:20,fiber:16,sugar:6,sodium:18,iron:3.3,calcium:14,vitC:1,vitD:0,potassium:543},
 
 // ── Sauces & Condiments ──
-{name:"Ketchup",cat:"Sauce",cal:112,pro:1.3,carb:30,fat:0.1,unit:"g",portion:15},
-{name:"Mustard yellow",cat:"Sauce",cal:66,pro:4,carb:5,fat:3.3,unit:"g",portion:10},
-{name:"Mustard dijon",cat:"Sauce",cal:66,pro:4,carb:5,fat:3.3,unit:"g",portion:10},
-{name:"Mayonnaise",cat:"Sauce",cal:680,pro:1,carb:1,fat:75,unit:"g",portion:15},
-{name:"Mayonnaise light",cat:"Sauce",cal:260,pro:0.5,carb:6,fat:26,unit:"g",portion:15},
-{name:"BBQ sauce",cat:"Sauce",cal:172,pro:1,carb:40,fat:0.6,unit:"g",portion:30},
-{name:"Hot sauce",cat:"Sauce",cal:12,pro:0.5,carb:2,fat:0.3,unit:"ml",portion:5},
-{name:"Sriracha",cat:"Sauce",cal:93,pro:2,carb:19,fat:1,unit:"g",portion:10},
-{name:"Soy sauce",cat:"Sauce",cal:53,pro:5,carb:5,fat:0.1,unit:"ml",portion:15},
-{name:"Teriyaki sauce",cat:"Sauce",cal:89,pro:6,carb:16,fat:0,unit:"ml",portion:30},
-{name:"Fish sauce",cat:"Sauce",cal:35,pro:5,carb:4,fat:0,unit:"ml",portion:10},
-{name:"Oyster sauce",cat:"Sauce",cal:51,pro:1,carb:11,fat:0.3,unit:"ml",portion:15},
-{name:"Hoisin sauce",cat:"Sauce",cal:220,pro:3,carb:44,fat:3,unit:"ml",portion:15},
-{name:"Worcestershire sauce",cat:"Sauce",cal:78,pro:0,carb:19,fat:0,unit:"ml",portion:10},
-{name:"Salsa",cat:"Sauce",cal:36,pro:1.5,carb:7,fat:0.2,unit:"g",portion:40},
-{name:"Guacamole",cat:"Sauce",cal:160,pro:2,carb:9,fat:15,unit:"g",portion:50},
-{name:"Pesto basil",cat:"Sauce",cal:418,pro:6,carb:6,fat:42,unit:"g",portion:30},
-{name:"Tomato sauce marinara",cat:"Sauce",cal:32,pro:1,carb:6,fat:0.5,unit:"g",portion:125},
-{name:"Alfredo sauce",cat:"Sauce",cal:188,pro:4,carb:5,fat:17,unit:"g",portion:60},
-{name:"Ranch dressing",cat:"Sauce",cal:455,pro:2,carb:6,fat:47,unit:"g",portion:30},
-{name:"Caesar dressing",cat:"Sauce",cal:447,pro:3,carb:4,fat:47,unit:"g",portion:30},
-{name:"Vinaigrette",cat:"Sauce",cal:230,pro:0.5,carb:8,fat:22,unit:"ml",portion:30},
-{name:"Balsamic vinegar",cat:"Sauce",cal:88,pro:0.5,carb:17,fat:0,unit:"ml",portion:15},
-{name:"Olive oil",cat:"Sauce",cal:884,pro:0,carb:0,fat:100,unit:"ml",portion:15},
-{name:"Coconut oil",cat:"Sauce",cal:862,pro:0,carb:0,fat:100,unit:"ml",portion:15},
-{name:"Sesame oil",cat:"Sauce",cal:884,pro:0,carb:0,fat:100,unit:"ml",portion:10},
-{name:"Tzatziki",cat:"Sauce",cal:55,pro:4,carb:4,fat:2.5,unit:"g",portion:50},
-{name:"Chimichurri",cat:"Sauce",cal:300,pro:1,carb:3,fat:32,unit:"g",portion:20},
-{name:"Aioli",cat:"Sauce",cal:650,pro:1,carb:2,fat:70,unit:"g",portion:15},
-{name:"Cranberry sauce",cat:"Sauce",cal:160,pro:0.2,carb:42,fat:0.1,unit:"g",portion:40},
-{name:"Apple cider vinegar",cat:"Sauce",cal:22,pro:0,carb:1,fat:0,unit:"ml",portion:15},
-{name:"Chili sauce sweet",cat:"Sauce",cal:229,pro:0.5,carb:56,fat:0.5,unit:"ml",portion:20},
-{name:"Coconut aminos",cat:"Sauce",cal:100,pro:0,carb:20,fat:0,unit:"ml",portion:15},
-{name:"Tahini sauce",cat:"Sauce",cal:595,pro:17,carb:22,fat:54,unit:"g",portion:15},
-{name:"Gravy beef",cat:"Sauce",cal:30,pro:1.5,carb:4,fat:1,unit:"ml",portion:60},
-{name:"Gravy chicken",cat:"Sauce",cal:28,pro:1,carb:4,fat:1,unit:"ml",portion:60},
+{name:"Ketchup",cat:"Sauce",cal:112,pro:1.3,carb:30,fat:0.1,unit:"g",portion:15,fiber:0.3,sugar:22,sodium:907,iron:0.2,calcium:10,vitC:4,vitD:0,potassium:315},
+{name:"Mustard yellow",cat:"Sauce",cal:66,pro:4,carb:5,fat:3.3,unit:"g",portion:10,fiber:4,sugar:3,sodium:1135,iron:1.5,calcium:58,vitC:0,vitD:0,potassium:138},
+{name:"Mustard dijon",cat:"Sauce",cal:66,pro:4,carb:5,fat:3.3,unit:"g",portion:10,fiber:4,sugar:3,sodium:1350,iron:1.5,calcium:58,vitC:0,vitD:0,potassium:138},
+{name:"Mayonnaise",cat:"Sauce",cal:680,pro:1,carb:1,fat:75,unit:"g",portion:15,fiber:0,sugar:0.8,sodium:635,iron:0.1,calcium:3,vitC:0,vitD:0,potassium:20},
+{name:"Mayonnaise light",cat:"Sauce",cal:260,pro:0.5,carb:6,fat:26,unit:"g",portion:15,fiber:0,sugar:4,sodium:600,iron:0.1,calcium:3,vitC:0,vitD:0,potassium:15},
+{name:"BBQ sauce",cat:"Sauce",cal:172,pro:1,carb:40,fat:0.6,unit:"g",portion:30,fiber:0.5,sugar:33,sodium:1170,iron:0.4,calcium:17,vitC:1,vitD:0,potassium:210},
+{name:"Hot sauce",cat:"Sauce",cal:12,pro:0.5,carb:2,fat:0.3,unit:"ml",portion:5,fiber:0.3,sugar:0,sodium:2643,iron:0.2,calcium:4,vitC:4,vitD:0,potassium:42},
+{name:"Sriracha",cat:"Sauce",cal:93,pro:2,carb:19,fat:1,unit:"g",portion:10,fiber:0.5,sugar:15,sodium:2000,iron:0.3,calcium:10,vitC:4,vitD:0,potassium:100},
+{name:"Soy sauce",cat:"Sauce",cal:53,pro:5,carb:5,fat:0.1,unit:"ml",portion:15,fiber:0.8,sugar:1,sodium:5493,iron:2.4,calcium:33,vitC:0,vitD:0,potassium:212},
+{name:"Teriyaki sauce",cat:"Sauce",cal:89,pro:6,carb:16,fat:0,unit:"ml",portion:30,fiber:0.1,sugar:14,sodium:3800,iron:1.5,calcium:18,vitC:0,vitD:0,potassium:200},
+{name:"Fish sauce",cat:"Sauce",cal:35,pro:5,carb:4,fat:0,unit:"ml",portion:10,fiber:0,sugar:0,sodium:7850,iron:0.3,calcium:43,vitC:0,vitD:0,potassium:300},
+{name:"Oyster sauce",cat:"Sauce",cal:51,pro:1,carb:11,fat:0.3,unit:"ml",portion:15,fiber:0,sugar:5,sodium:2733,iron:0.3,calcium:15,vitC:0,vitD:0,potassium:50},
+{name:"Hoisin sauce",cat:"Sauce",cal:220,pro:3,carb:44,fat:3,unit:"ml",portion:15,fiber:1,sugar:30,sodium:1400,iron:0.5,calcium:20,vitC:0,vitD:0,potassium:100},
+{name:"Worcestershire sauce",cat:"Sauce",cal:78,pro:0,carb:19,fat:0,unit:"ml",portion:10,fiber:0,sugar:10,sodium:980,iron:1.0,calcium:30,vitC:0,vitD:0,potassium:170},
+{name:"Salsa",cat:"Sauce",cal:36,pro:1.5,carb:7,fat:0.2,unit:"g",portion:40,fiber:1.5,sugar:3.5,sodium:430,iron:0.3,calcium:15,vitC:10,vitD:0,potassium:200},
+{name:"Guacamole",cat:"Sauce",cal:160,pro:2,carb:9,fat:15,unit:"g",portion:50,fiber:6.7,sugar:0.7,sodium:230,iron:0.6,calcium:12,vitC:10,vitD:0,potassium:485},
+{name:"Pesto basil",cat:"Sauce",cal:418,pro:6,carb:6,fat:42,unit:"g",portion:30,fiber:1.5,sugar:1.5,sodium:600,iron:2.0,calcium:190,vitC:3,vitD:0,potassium:220},
+{name:"Tomato sauce marinara",cat:"Sauce",cal:32,pro:1,carb:6,fat:0.5,unit:"g",portion:125,fiber:1.5,sugar:3.5,sodium:400,iron:0.5,calcium:15,vitC:8,vitD:0,potassium:250},
+{name:"Alfredo sauce",cat:"Sauce",cal:188,pro:4,carb:5,fat:17,unit:"g",portion:60,fiber:0,sugar:2,sodium:480,iron:0.1,calcium:100,vitC:0,vitD:0.1,potassium:60},
+{name:"Ranch dressing",cat:"Sauce",cal:455,pro:2,carb:6,fat:47,unit:"g",portion:30,fiber:0,sugar:3,sodium:550,iron:0.1,calcium:25,vitC:0,vitD:0,potassium:40},
+{name:"Caesar dressing",cat:"Sauce",cal:447,pro:3,carb:4,fat:47,unit:"g",portion:30,fiber:0,sugar:2,sodium:700,iron:0.2,calcium:40,vitC:0,vitD:0,potassium:30},
+{name:"Vinaigrette",cat:"Sauce",cal:230,pro:0.5,carb:8,fat:22,unit:"ml",portion:30,fiber:0,sugar:5,sodium:380,iron:0.1,calcium:5,vitC:0,vitD:0,potassium:15},
+{name:"Balsamic vinegar",cat:"Sauce",cal:88,pro:0.5,carb:17,fat:0,unit:"ml",portion:15,fiber:0,sugar:15,sodium:23,iron:0.7,calcium:27,vitC:0,vitD:0,potassium:112},
+{name:"Olive oil",cat:"Sauce",cal:884,pro:0,carb:0,fat:100,unit:"ml",portion:15,fiber:0,sugar:0,sodium:2,iron:0.6,calcium:1,vitC:0,vitD:0,potassium:1},
+{name:"Coconut oil",cat:"Sauce",cal:862,pro:0,carb:0,fat:100,unit:"ml",portion:15,fiber:0,sugar:0,sodium:0,iron:0,calcium:0,vitC:0,vitD:0,potassium:0},
+{name:"Sesame oil",cat:"Sauce",cal:884,pro:0,carb:0,fat:100,unit:"ml",portion:10,fiber:0,sugar:0,sodium:0,iron:0,calcium:0,vitC:0,vitD:0,potassium:0},
+{name:"Tzatziki",cat:"Sauce",cal:55,pro:4,carb:4,fat:2.5,unit:"g",portion:50,fiber:0.3,sugar:2,sodium:300,iron:0.1,calcium:60,vitC:2,vitD:0,potassium:100},
+{name:"Chimichurri",cat:"Sauce",cal:300,pro:1,carb:3,fat:32,unit:"g",portion:20,fiber:1,sugar:0.5,sodium:500,iron:1.0,calcium:40,vitC:10,vitD:0,potassium:100},
+{name:"Aioli",cat:"Sauce",cal:650,pro:1,carb:2,fat:70,unit:"g",portion:15,fiber:0,sugar:0.5,sodium:600,iron:0.1,calcium:5,vitC:0,vitD:0,potassium:20},
+{name:"Cranberry sauce",cat:"Sauce",cal:160,pro:0.2,carb:42,fat:0.1,unit:"g",portion:40,fiber:1,sugar:35,sodium:20,iron:0.2,calcium:5,vitC:3,vitD:0,potassium:30},
+{name:"Apple cider vinegar",cat:"Sauce",cal:22,pro:0,carb:1,fat:0,unit:"ml",portion:15,fiber:0,sugar:0.4,sodium:5,iron:0,calcium:7,vitC:0,vitD:0,potassium:73},
+{name:"Chili sauce sweet",cat:"Sauce",cal:229,pro:0.5,carb:56,fat:0.5,unit:"ml",portion:20,fiber:0.5,sugar:48,sodium:800,iron:0.3,calcium:10,vitC:5,vitD:0,potassium:50},
+{name:"Coconut aminos",cat:"Sauce",cal:100,pro:0,carb:20,fat:0,unit:"ml",portion:15,fiber:0,sugar:13,sodium:390,iron:0,calcium:0,vitC:0,vitD:0,potassium:0},
+{name:"Tahini sauce",cat:"Sauce",cal:595,pro:17,carb:22,fat:54,unit:"g",portion:15,fiber:9.3,sugar:0.5,sodium:70,iron:8.9,calcium:426,vitC:0,vitD:0,potassium:414},
+{name:"Gravy beef",cat:"Sauce",cal:30,pro:1.5,carb:4,fat:1,unit:"ml",portion:60,fiber:0.2,sugar:0.5,sodium:430,iron:0.3,calcium:5,vitC:0,vitD:0,potassium:50},
+{name:"Gravy chicken",cat:"Sauce",cal:28,pro:1,carb:4,fat:1,unit:"ml",portion:60,fiber:0.2,sugar:0.5,sodium:420,iron:0.2,calcium:5,vitC:0,vitD:0,potassium:40},
 
 // ── Soups ──
-{name:"Chicken noodle soup",cat:"Soup",cal:30,pro:2,carb:4,fat:0.5,unit:"ml",portion:250},
-{name:"Tomato soup",cat:"Soup",cal:35,pro:1,carb:6,fat:0.8,unit:"ml",portion:250},
-{name:"Minestrone soup",cat:"Soup",cal:36,pro:2,carb:6,fat:0.5,unit:"ml",portion:250},
-{name:"Clam chowder",cat:"Soup",cal:58,pro:3,carb:7,fat:2,unit:"ml",portion:250},
-{name:"French onion soup",cat:"Soup",cal:35,pro:1.5,carb:5,fat:1,unit:"ml",portion:250},
-{name:"Miso soup",cat:"Soup",cal:16,pro:1,carb:2,fat:0.4,unit:"ml",portion:250},
-{name:"Lentil soup",cat:"Soup",cal:56,pro:4,carb:8,fat:0.8,unit:"ml",portion:250},
-{name:"Split pea soup",cat:"Soup",cal:60,pro:4,carb:9,fat:0.5,unit:"ml",portion:250},
-{name:"Butternut squash soup",cat:"Soup",cal:38,pro:1,carb:7,fat:1,unit:"ml",portion:250},
-{name:"Cream of mushroom soup",cat:"Soup",cal:52,pro:1,carb:4,fat:3.5,unit:"ml",portion:250},
-{name:"Broccoli cheddar soup",cat:"Soup",cal:70,pro:3,carb:5,fat:4,unit:"ml",portion:250},
-{name:"Gazpacho",cat:"Soup",cal:20,pro:0.5,carb:3,fat:0.8,unit:"ml",portion:250},
-{name:"Pho broth",cat:"Soup",cal:10,pro:1,carb:1,fat:0.3,unit:"ml",portion:350},
-{name:"Wonton soup",cat:"Soup",cal:30,pro:2,carb:4,fat:0.5,unit:"ml",portion:250},
-{name:"Tortilla soup",cat:"Soup",cal:55,pro:3,carb:7,fat:2,unit:"ml",portion:250},
-{name:"Bone broth",cat:"Soup",cal:15,pro:3,carb:0,fat:0.2,unit:"ml",portion:250},
-{name:"Chicken broth",cat:"Soup",cal:5,pro:0.5,carb:0.5,fat:0.1,unit:"ml",portion:250},
-{name:"Vegetable broth",cat:"Soup",cal:6,pro:0.3,carb:1,fat:0,unit:"ml",portion:250},
+{name:"Chicken noodle soup",cat:"Soup",cal:30,pro:2,carb:4,fat:0.5,unit:"ml",portion:250,fiber:0.3,sugar:0.5,sodium:343,iron:0.3,calcium:8,vitC:0,vitD:0,potassium:50},
+{name:"Tomato soup",cat:"Soup",cal:35,pro:1,carb:6,fat:0.8,unit:"ml",portion:250,fiber:0.5,sugar:3.5,sodium:340,iron:0.5,calcium:10,vitC:5,vitD:0,potassium:130},
+{name:"Minestrone soup",cat:"Soup",cal:36,pro:2,carb:6,fat:0.5,unit:"ml",portion:250,fiber:1,sugar:1,sodium:350,iron:0.5,calcium:15,vitC:3,vitD:0,potassium:100},
+{name:"Clam chowder",cat:"Soup",cal:58,pro:3,carb:7,fat:2,unit:"ml",portion:250,fiber:0.3,sugar:1,sodium:400,iron:0.5,calcium:40,vitC:2,vitD:0,potassium:100},
+{name:"French onion soup",cat:"Soup",cal:35,pro:1.5,carb:5,fat:1,unit:"ml",portion:250,fiber:0.3,sugar:2,sodium:400,iron:0.3,calcium:15,vitC:1,vitD:0,potassium:60},
+{name:"Miso soup",cat:"Soup",cal:16,pro:1,carb:2,fat:0.4,unit:"ml",portion:250,fiber:0.5,sugar:1,sodium:500,iron:0.4,calcium:10,vitC:0,vitD:0,potassium:60},
+{name:"Lentil soup",cat:"Soup",cal:56,pro:4,carb:8,fat:0.8,unit:"ml",portion:250,fiber:2,sugar:1,sodium:360,iron:1.0,calcium:15,vitC:1,vitD:0,potassium:150},
+{name:"Split pea soup",cat:"Soup",cal:60,pro:4,carb:9,fat:0.5,unit:"ml",portion:250,fiber:2,sugar:2,sodium:370,iron:0.8,calcium:12,vitC:0.5,vitD:0,potassium:130},
+{name:"Butternut squash soup",cat:"Soup",cal:38,pro:1,carb:7,fat:1,unit:"ml",portion:250,fiber:0.8,sugar:3,sodium:300,iron:0.3,calcium:20,vitC:5,vitD:0,potassium:120},
+{name:"Cream of mushroom soup",cat:"Soup",cal:52,pro:1,carb:4,fat:3.5,unit:"ml",portion:250,fiber:0.3,sugar:1,sodium:400,iron:0.2,calcium:20,vitC:0,vitD:0,potassium:60},
+{name:"Broccoli cheddar soup",cat:"Soup",cal:70,pro:3,carb:5,fat:4,unit:"ml",portion:250,fiber:0.5,sugar:2,sodium:400,iron:0.3,calcium:80,vitC:5,vitD:0.1,potassium:80},
+{name:"Gazpacho",cat:"Soup",cal:20,pro:0.5,carb:3,fat:0.8,unit:"ml",portion:250,fiber:0.8,sugar:2,sodium:300,iron:0.3,calcium:10,vitC:15,vitD:0,potassium:150},
+{name:"Pho broth",cat:"Soup",cal:10,pro:1,carb:1,fat:0.3,unit:"ml",portion:350,fiber:0,sugar:0.5,sodium:350,iron:0.2,calcium:5,vitC:0,vitD:0,potassium:30},
+{name:"Wonton soup",cat:"Soup",cal:30,pro:2,carb:4,fat:0.5,unit:"ml",portion:250,fiber:0.3,sugar:0.5,sodium:350,iron:0.3,calcium:10,vitC:0,vitD:0,potassium:40},
+{name:"Tortilla soup",cat:"Soup",cal:55,pro:3,carb:7,fat:2,unit:"ml",portion:250,fiber:0.8,sugar:1.5,sodium:400,iron:0.5,calcium:20,vitC:3,vitD:0,potassium:100},
+{name:"Bone broth",cat:"Soup",cal:15,pro:3,carb:0,fat:0.2,unit:"ml",portion:250,fiber:0,sugar:0,sodium:200,iron:0.2,calcium:10,vitC:0,vitD:0,potassium:100},
+{name:"Chicken broth",cat:"Soup",cal:5,pro:0.5,carb:0.5,fat:0.1,unit:"ml",portion:250,fiber:0,sugar:0.3,sodium:300,iron:0.1,calcium:5,vitC:0,vitD:0,potassium:25},
+{name:"Vegetable broth",cat:"Soup",cal:6,pro:0.3,carb:1,fat:0,unit:"ml",portion:250,fiber:0,sugar:0.5,sodium:310,iron:0.1,calcium:5,vitC:0,vitD:0,potassium:30},
 
 // ── International & Prepared Meals ──
-{name:"Pizza slice cheese",cat:"Meals",cal:266,pro:11,carb:33,fat:10,unit:"g",portion:107,pcs:"slice",pcsW:107},
-{name:"Pizza slice pepperoni",cat:"Meals",cal:298,pro:13,carb:33,fat:13,unit:"g",portion:107,pcs:"slice",pcsW:107},
-{name:"Pizza margherita slice",cat:"Meals",cal:250,pro:10,carb:30,fat:10,unit:"g",portion:107,pcs:"slice",pcsW:107},
-{name:"Burger beef patty",cat:"Meals",cal:254,pro:17,carb:0,fat:20,unit:"g",portion:113,pcs:"patty",pcsW:113},
-{name:"Cheeseburger",cat:"Meals",cal:250,pro:14,carb:20,fat:12,unit:"g",portion:200},
-{name:"Burrito chicken",cat:"Meals",cal:165,pro:9,carb:18,fat:6,unit:"g",portion:300},
-{name:"Burrito beef",cat:"Meals",cal:180,pro:10,carb:18,fat:8,unit:"g",portion:300},
-{name:"Taco beef",cat:"Meals",cal:210,pro:10,carb:16,fat:12,unit:"g",portion:100,pcs:"taco",pcsW:100},
-{name:"Taco chicken",cat:"Meals",cal:185,pro:12,carb:16,fat:8,unit:"g",portion:100,pcs:"taco",pcsW:100},
-{name:"Taco fish",cat:"Meals",cal:195,pro:11,carb:18,fat:9,unit:"g",portion:100,pcs:"taco",pcsW:100},
-{name:"Quesadilla cheese",cat:"Meals",cal:260,pro:11,carb:25,fat:13,unit:"g",portion:120},
-{name:"Enchilada chicken",cat:"Meals",cal:163,pro:10,carb:15,fat:7,unit:"g",portion:150},
-{name:"Nachos with cheese",cat:"Meals",cal:346,pro:9,carb:36,fat:19,unit:"g",portion:150},
-{name:"Sandwich turkey",cat:"Meals",cal:150,pro:10,carb:16,fat:5,unit:"g",portion:200},
-{name:"Sandwich ham cheese",cat:"Meals",cal:175,pro:11,carb:17,fat:7,unit:"g",portion:200},
-{name:"Sandwich BLT",cat:"Meals",cal:180,pro:9,carb:18,fat:8,unit:"g",portion:180},
-{name:"Sandwich tuna",cat:"Meals",cal:160,pro:10,carb:17,fat:6,unit:"g",portion:200},
-{name:"Grilled cheese",cat:"Meals",cal:290,pro:11,carb:26,fat:16,unit:"g",portion:150},
-{name:"Club sandwich",cat:"Meals",cal:195,pro:13,carb:16,fat:9,unit:"g",portion:250},
-{name:"Wrap chicken caesar",cat:"Meals",cal:175,pro:11,carb:16,fat:8,unit:"g",portion:200},
-{name:"Sub Italian",cat:"Meals",cal:200,pro:10,carb:22,fat:8,unit:"g",portion:250},
-{name:"Sushi roll California",cat:"Meals",cal:130,pro:5,carb:22,fat:2.5,unit:"g",portion:180},
-{name:"Sushi nigiri salmon",cat:"Meals",cal:150,pro:8,carb:20,fat:3,unit:"g",portion:40,pcs:"piece",pcsW:40},
-{name:"Sushi sashimi salmon",cat:"Meals",cal:208,pro:20,carb:0,fat:13,unit:"g",portion:30,pcs:"piece",pcsW:30},
-{name:"Pad thai",cat:"Meals",cal:130,pro:6,carb:17,fat:4,unit:"g",portion:300},
-{name:"Fried rice chicken",cat:"Meals",cal:150,pro:6,carb:20,fat:5,unit:"g",portion:250},
-{name:"Stir fry chicken veg",cat:"Meals",cal:100,pro:9,carb:7,fat:4,unit:"g",portion:250},
-{name:"Stir fry beef broccoli",cat:"Meals",cal:110,pro:10,carb:6,fat:5,unit:"g",portion:250},
-{name:"Kung pao chicken",cat:"Meals",cal:160,pro:14,carb:10,fat:8,unit:"g",portion:200},
-{name:"General Tso chicken",cat:"Meals",cal:200,pro:12,carb:20,fat:9,unit:"g",portion:200},
-{name:"Sweet and sour chicken",cat:"Meals",cal:180,pro:10,carb:22,fat:6,unit:"g",portion:200},
-{name:"Orange chicken",cat:"Meals",cal:210,pro:12,carb:22,fat:9,unit:"g",portion:200},
-{name:"Teriyaki chicken",cat:"Meals",cal:140,pro:14,carb:10,fat:5,unit:"g",portion:200},
-{name:"Spring roll fried",cat:"Meals",cal:250,pro:5,carb:28,fat:13,unit:"g",portion:64,pcs:"roll",pcsW:64},
-{name:"Spring roll fresh",cat:"Meals",cal:90,pro:4,carb:14,fat:1.5,unit:"g",portion:80,pcs:"roll",pcsW:80},
-{name:"Dumpling steamed",cat:"Meals",cal:162,pro:7,carb:19,fat:6,unit:"g",portion:30,pcs:"dumpling",pcsW:30},
-{name:"Dumpling fried",cat:"Meals",cal:210,pro:7,carb:21,fat:10,unit:"g",portion:30,pcs:"dumpling",pcsW:30},
-{name:"Egg fried rice",cat:"Meals",cal:163,pro:4,carb:22,fat:6,unit:"g",portion:250},
-{name:"Lo mein",cat:"Meals",cal:120,pro:5,carb:17,fat:3,unit:"g",portion:250},
-{name:"Chow mein",cat:"Meals",cal:130,pro:5,carb:18,fat:4,unit:"g",portion:250},
-{name:"Butter chicken",cat:"Meals",cal:140,pro:10,carb:6,fat:9,unit:"g",portion:200},
-{name:"Chicken tikka masala",cat:"Meals",cal:150,pro:11,carb:7,fat:9,unit:"g",portion:200},
-{name:"Chicken curry",cat:"Meals",cal:115,pro:10,carb:6,fat:6,unit:"g",portion:200},
-{name:"Dal lentil curry",cat:"Meals",cal:80,pro:5,carb:12,fat:2,unit:"g",portion:200},
-{name:"Palak paneer",cat:"Meals",cal:150,pro:8,carb:6,fat:11,unit:"g",portion:200},
-{name:"Biryani chicken",cat:"Meals",cal:146,pro:8,carb:18,fat:5,unit:"g",portion:250},
-{name:"Samosa vegetable",cat:"Meals",cal:262,pro:4,carb:30,fat:14,unit:"g",portion:80,pcs:"samosa",pcsW:80},
-{name:"Naan bread",cat:"Meals",cal:290,pro:9,carb:50,fat:5,unit:"g",portion:90,pcs:"naan",pcsW:90},
-{name:"Paella",cat:"Meals",cal:120,pro:7,carb:13,fat:4,unit:"g",portion:250},
-{name:"Risotto",cat:"Meals",cal:130,pro:3.5,carb:18,fat:5,unit:"g",portion:250},
-{name:"Lasagna meat",cat:"Meals",cal:135,pro:8,carb:13,fat:6,unit:"g",portion:250},
-{name:"Lasagna vegetable",cat:"Meals",cal:110,pro:5,carb:13,fat:4,unit:"g",portion:250},
-{name:"Spaghetti bolognese",cat:"Meals",cal:120,pro:7,carb:13,fat:4,unit:"g",portion:300},
-{name:"Spaghetti carbonara",cat:"Meals",cal:150,pro:8,carb:17,fat:6,unit:"g",portion:300},
-{name:"Pasta pesto",cat:"Meals",cal:170,pro:6,carb:20,fat:8,unit:"g",portion:250},
-{name:"Mac and cheese",cat:"Meals",cal:164,pro:6,carb:17,fat:8,unit:"g",portion:200},
-{name:"Ravioli cheese",cat:"Meals",cal:140,pro:6,carb:18,fat:5,unit:"g",portion:200},
-{name:"Poke bowl tuna",cat:"Meals",cal:120,pro:9,carb:14,fat:3,unit:"g",portion:300},
-{name:"Bowl chicken rice",cat:"Meals",cal:130,pro:9,carb:15,fat:3.5,unit:"g",portion:350},
-{name:"Buddha bowl",cat:"Meals",cal:105,pro:5,carb:14,fat:3.5,unit:"g",portion:400},
-{name:"Acai bowl",cat:"Meals",cal:120,pro:2,carb:18,fat:5,unit:"g",portion:300},
-{name:"Shawarma chicken",cat:"Meals",cal:170,pro:15,carb:8,fat:9,unit:"g",portion:200},
-{name:"Gyro lamb",cat:"Meals",cal:217,pro:12,carb:15,fat:12,unit:"g",portion:200},
-{name:"Kebab chicken",cat:"Meals",cal:155,pro:18,carb:3,fat:8,unit:"g",portion:150},
-{name:"Kebab beef",cat:"Meals",cal:190,pro:16,carb:3,fat:13,unit:"g",portion:150},
-{name:"Fish and chips",cat:"Meals",cal:200,pro:10,carb:18,fat:10,unit:"g",portion:300},
-{name:"Shepherd's pie",cat:"Meals",cal:110,pro:6,carb:12,fat:4,unit:"g",portion:250},
-{name:"Moussaka",cat:"Meals",cal:115,pro:6,carb:8,fat:7,unit:"g",portion:250},
-{name:"Ratatouille",cat:"Meals",cal:35,pro:1,carb:5,fat:1.5,unit:"g",portion:200},
-{name:"Quiche lorraine",cat:"Meals",cal:235,pro:10,carb:15,fat:15,unit:"g",portion:150},
-{name:"Croque monsieur",cat:"Meals",cal:265,pro:14,carb:18,fat:15,unit:"g",portion:180},
-{name:"Chili con carne",cat:"Meals",cal:95,pro:7,carb:8,fat:4,unit:"g",portion:250},
-{name:"Jambalaya",cat:"Meals",cal:125,pro:7,carb:15,fat:4,unit:"g",portion:250},
-{name:"Gumbo",cat:"Meals",cal:70,pro:4,carb:8,fat:2.5,unit:"g",portion:250},
-{name:"Bibimbap",cat:"Meals",cal:100,pro:5,carb:15,fat:2,unit:"g",portion:350},
-{name:"Ramen with broth and noodles",cat:"Meals",cal:60,pro:3,carb:8,fat:1.5,unit:"ml",portion:400},
-{name:"Pho",cat:"Meals",cal:40,pro:3,carb:5,fat:0.5,unit:"ml",portion:400},
-{name:"Tom yum soup",cat:"Meals",cal:30,pro:2,carb:4,fat:0.8,unit:"ml",portion:300},
-{name:"Greek salad",cat:"Meals",cal:90,pro:4,carb:6,fat:6,unit:"g",portion:200},
-{name:"Caesar salad",cat:"Meals",cal:120,pro:5,carb:8,fat:8,unit:"g",portion:200},
-{name:"Cobb salad",cat:"Meals",cal:130,pro:10,carb:5,fat:8,unit:"g",portion:250},
-{name:"Chicken salad",cat:"Meals",cal:160,pro:14,carb:3,fat:10,unit:"g",portion:150},
-{name:"Egg salad",cat:"Meals",cal:225,pro:9,carb:2,fat:20,unit:"g",portion:100},
-{name:"Potato salad",cat:"Meals",cal:143,pro:2,carb:14,fat:9,unit:"g",portion:150},
-{name:"Pasta salad",cat:"Meals",cal:160,pro:4,carb:20,fat:7,unit:"g",portion:150},
-{name:"Tabbouleh",cat:"Meals",cal:85,pro:2,carb:12,fat:3.5,unit:"g",portion:150},
+{name:"Pizza slice cheese",cat:"Meals",cal:266,pro:11,carb:33,fat:10,unit:"g",portion:107,pcs:"slice",pcsW:107,fiber:1.5,sugar:3,sodium:570,iron:1.5,calcium:130,vitC:1,vitD:0.1,potassium:140},
+{name:"Pizza slice pepperoni",cat:"Meals",cal:298,pro:13,carb:33,fat:13,unit:"g",portion:107,pcs:"slice",pcsW:107,fiber:1.5,sugar:3,sodium:660,iron:1.8,calcium:120,vitC:1,vitD:0.1,potassium:150},
+{name:"Pizza margherita slice",cat:"Meals",cal:250,pro:10,carb:30,fat:10,unit:"g",portion:107,pcs:"slice",pcsW:107,fiber:1.5,sugar:3,sodium:540,iron:1.5,calcium:150,vitC:2,vitD:0.1,potassium:140},
+{name:"Burger beef patty",cat:"Meals",cal:254,pro:17,carb:0,fat:20,unit:"g",portion:113,pcs:"patty",pcsW:113,fiber:0,sugar:0,sodium:72,iron:2.3,calcium:18,vitC:0,vitD:0.1,potassium:280},
+{name:"Cheeseburger",cat:"Meals",cal:250,pro:14,carb:20,fat:12,unit:"g",portion:200,fiber:1,sugar:4,sodium:550,iron:2.0,calcium:100,vitC:1,vitD:0.2,potassium:200},
+{name:"Burrito chicken",cat:"Meals",cal:165,pro:9,carb:18,fat:6,unit:"g",portion:300,fiber:3,sugar:2,sodium:450,iron:1.5,calcium:80,vitC:3,vitD:0.1,potassium:200},
+{name:"Burrito beef",cat:"Meals",cal:180,pro:10,carb:18,fat:8,unit:"g",portion:300,fiber:3,sugar:2,sodium:480,iron:1.8,calcium:80,vitC:2,vitD:0.1,potassium:210},
+{name:"Taco beef",cat:"Meals",cal:210,pro:10,carb:16,fat:12,unit:"g",portion:100,pcs:"taco",pcsW:100,fiber:2,sugar:2,sodium:400,iron:1.5,calcium:60,vitC:3,vitD:0.1,potassium:180},
+{name:"Taco chicken",cat:"Meals",cal:185,pro:12,carb:16,fat:8,unit:"g",portion:100,pcs:"taco",pcsW:100,fiber:2,sugar:2,sodium:380,iron:1.0,calcium:60,vitC:3,vitD:0.1,potassium:170},
+{name:"Taco fish",cat:"Meals",cal:195,pro:11,carb:18,fat:9,unit:"g",portion:100,pcs:"taco",pcsW:100,fiber:2,sugar:2,sodium:360,iron:0.8,calcium:50,vitC:3,vitD:1,potassium:160},
+{name:"Quesadilla cheese",cat:"Meals",cal:260,pro:11,carb:25,fat:13,unit:"g",portion:120,fiber:1.5,sugar:2,sodium:500,iron:1.5,calcium:200,vitC:0,vitD:0.1,potassium:100},
+{name:"Enchilada chicken",cat:"Meals",cal:163,pro:10,carb:15,fat:7,unit:"g",portion:150,fiber:2,sugar:2,sodium:500,iron:1.2,calcium:80,vitC:3,vitD:0.1,potassium:180},
+{name:"Nachos with cheese",cat:"Meals",cal:346,pro:9,carb:36,fat:19,unit:"g",portion:150,fiber:3,sugar:2,sodium:600,iron:1.5,calcium:150,vitC:2,vitD:0.1,potassium:150},
+{name:"Sandwich turkey",cat:"Meals",cal:150,pro:10,carb:16,fat:5,unit:"g",portion:200,fiber:1.5,sugar:3,sodium:550,iron:1.5,calcium:60,vitC:2,vitD:0.1,potassium:150},
+{name:"Sandwich ham cheese",cat:"Meals",cal:175,pro:11,carb:17,fat:7,unit:"g",portion:200,fiber:1.5,sugar:3,sodium:600,iron:1.5,calcium:100,vitC:1,vitD:0.2,potassium:150},
+{name:"Sandwich BLT",cat:"Meals",cal:180,pro:9,carb:18,fat:8,unit:"g",portion:180,fiber:1.5,sugar:3,sodium:550,iron:1.5,calcium:40,vitC:5,vitD:0.1,potassium:150},
+{name:"Sandwich tuna",cat:"Meals",cal:160,pro:10,carb:17,fat:6,unit:"g",portion:200,fiber:1.5,sugar:3,sodium:450,iron:1.3,calcium:40,vitC:1,vitD:0.5,potassium:150},
+{name:"Grilled cheese",cat:"Meals",cal:290,pro:11,carb:26,fat:16,unit:"g",portion:150,fiber:1,sugar:3,sodium:560,iron:2.0,calcium:250,vitC:0,vitD:0.2,potassium:80},
+{name:"Club sandwich",cat:"Meals",cal:195,pro:13,carb:16,fat:9,unit:"g",portion:250,fiber:1.5,sugar:3,sodium:600,iron:1.5,calcium:60,vitC:3,vitD:0.2,potassium:180},
+{name:"Wrap chicken caesar",cat:"Meals",cal:175,pro:11,carb:16,fat:8,unit:"g",portion:200,fiber:1.5,sugar:2,sodium:500,iron:1.2,calcium:80,vitC:3,vitD:0.1,potassium:160},
+{name:"Sub Italian",cat:"Meals",cal:200,pro:10,carb:22,fat:8,unit:"g",portion:250,fiber:2,sugar:3,sodium:650,iron:2.0,calcium:80,vitC:3,vitD:0.2,potassium:170},
+{name:"Sushi roll California",cat:"Meals",cal:130,pro:5,carb:22,fat:2.5,unit:"g",portion:180,fiber:1,sugar:2,sodium:400,iron:0.5,calcium:15,vitC:1,vitD:0.5,potassium:80},
+{name:"Sushi nigiri salmon",cat:"Meals",cal:150,pro:8,carb:20,fat:3,unit:"g",portion:40,pcs:"piece",pcsW:40,fiber:0,sugar:2,sodium:350,iron:0.5,calcium:10,vitC:0,vitD:5,potassium:100},
+{name:"Sushi sashimi salmon",cat:"Meals",cal:208,pro:20,carb:0,fat:13,unit:"g",portion:30,pcs:"piece",pcsW:30,fiber:0,sugar:0,sodium:50,iron:0.8,calcium:12,vitC:0,vitD:11,potassium:363},
+{name:"Pad thai",cat:"Meals",cal:130,pro:6,carb:17,fat:4,unit:"g",portion:300,fiber:1,sugar:5,sodium:600,iron:1.0,calcium:30,vitC:3,vitD:0,potassium:120},
+{name:"Fried rice chicken",cat:"Meals",cal:150,pro:6,carb:20,fat:5,unit:"g",portion:250,fiber:1,sugar:1,sodium:500,iron:1.0,calcium:25,vitC:3,vitD:0.1,potassium:100},
+{name:"Stir fry chicken veg",cat:"Meals",cal:100,pro:9,carb:7,fat:4,unit:"g",portion:250,fiber:2,sugar:2,sodium:400,iron:1.0,calcium:25,vitC:10,vitD:0.1,potassium:180},
+{name:"Stir fry beef broccoli",cat:"Meals",cal:110,pro:10,carb:6,fat:5,unit:"g",portion:250,fiber:2,sugar:2,sodium:500,iron:1.5,calcium:30,vitC:15,vitD:0.1,potassium:200},
+{name:"Kung pao chicken",cat:"Meals",cal:160,pro:14,carb:10,fat:8,unit:"g",portion:200,fiber:2,sugar:4,sodium:650,iron:1.2,calcium:25,vitC:5,vitD:0.1,potassium:200},
+{name:"General Tso chicken",cat:"Meals",cal:200,pro:12,carb:20,fat:9,unit:"g",portion:200,fiber:0.5,sugar:10,sodium:700,iron:1.0,calcium:15,vitC:2,vitD:0.1,potassium:150},
+{name:"Sweet and sour chicken",cat:"Meals",cal:180,pro:10,carb:22,fat:6,unit:"g",portion:200,fiber:0.5,sugar:12,sodium:500,iron:0.8,calcium:15,vitC:5,vitD:0.1,potassium:130},
+{name:"Orange chicken",cat:"Meals",cal:210,pro:12,carb:22,fat:9,unit:"g",portion:200,fiber:0.5,sugar:12,sodium:600,iron:1.0,calcium:15,vitC:5,vitD:0.1,potassium:140},
+{name:"Teriyaki chicken",cat:"Meals",cal:140,pro:14,carb:10,fat:5,unit:"g",portion:200,fiber:0.3,sugar:6,sodium:600,iron:1.0,calcium:15,vitC:1,vitD:0.1,potassium:200},
+{name:"Spring roll fried",cat:"Meals",cal:250,pro:5,carb:28,fat:13,unit:"g",portion:64,pcs:"roll",pcsW:64,fiber:1.5,sugar:2,sodium:400,iron:1.0,calcium:15,vitC:3,vitD:0,potassium:100},
+{name:"Spring roll fresh",cat:"Meals",cal:90,pro:4,carb:14,fat:1.5,unit:"g",portion:80,pcs:"roll",pcsW:80,fiber:1,sugar:2,sodium:300,iron:0.5,calcium:15,vitC:5,vitD:0,potassium:80},
+{name:"Dumpling steamed",cat:"Meals",cal:162,pro:7,carb:19,fat:6,unit:"g",portion:30,pcs:"dumpling",pcsW:30,fiber:0.8,sugar:1,sodium:400,iron:1.0,calcium:10,vitC:0,vitD:0,potassium:80},
+{name:"Dumpling fried",cat:"Meals",cal:210,pro:7,carb:21,fat:10,unit:"g",portion:30,pcs:"dumpling",pcsW:30,fiber:0.8,sugar:1,sodium:450,iron:1.0,calcium:10,vitC:0,vitD:0,potassium:80},
+{name:"Egg fried rice",cat:"Meals",cal:163,pro:4,carb:22,fat:6,unit:"g",portion:250,fiber:1,sugar:1,sodium:490,iron:1.0,calcium:25,vitC:2,vitD:0.1,potassium:90},
+{name:"Lo mein",cat:"Meals",cal:120,pro:5,carb:17,fat:3,unit:"g",portion:250,fiber:1.2,sugar:2,sodium:500,iron:1.0,calcium:15,vitC:2,vitD:0,potassium:80},
+{name:"Chow mein",cat:"Meals",cal:130,pro:5,carb:18,fat:4,unit:"g",portion:250,fiber:1.5,sugar:2,sodium:500,iron:1.2,calcium:15,vitC:3,vitD:0,potassium:90},
+{name:"Butter chicken",cat:"Meals",cal:140,pro:10,carb:6,fat:9,unit:"g",portion:200,fiber:1,sugar:3,sodium:400,iron:1.0,calcium:40,vitC:2,vitD:0.1,potassium:200},
+{name:"Chicken tikka masala",cat:"Meals",cal:150,pro:11,carb:7,fat:9,unit:"g",portion:200,fiber:1.5,sugar:3,sodium:450,iron:1.2,calcium:50,vitC:3,vitD:0.1,potassium:210},
+{name:"Chicken curry",cat:"Meals",cal:115,pro:10,carb:6,fat:6,unit:"g",portion:200,fiber:1.5,sugar:2,sodium:400,iron:1.0,calcium:30,vitC:3,vitD:0.1,potassium:200},
+{name:"Dal lentil curry",cat:"Meals",cal:80,pro:5,carb:12,fat:2,unit:"g",portion:200,fiber:4,sugar:1.5,sodium:350,iron:2.0,calcium:25,vitC:2,vitD:0,potassium:250},
+{name:"Palak paneer",cat:"Meals",cal:150,pro:8,carb:6,fat:11,unit:"g",portion:200,fiber:2,sugar:2,sodium:400,iron:2.5,calcium:200,vitC:10,vitD:0.1,potassium:300},
+{name:"Biryani chicken",cat:"Meals",cal:146,pro:8,carb:18,fat:5,unit:"g",portion:250,fiber:1,sugar:1,sodium:400,iron:1.0,calcium:20,vitC:2,vitD:0.1,potassium:150},
+{name:"Samosa vegetable",cat:"Meals",cal:262,pro:4,carb:30,fat:14,unit:"g",portion:80,pcs:"samosa",pcsW:80,fiber:2.5,sugar:2,sodium:400,iron:1.0,calcium:20,vitC:3,vitD:0,potassium:150},
+{name:"Naan bread",cat:"Meals",cal:290,pro:9,carb:50,fat:5,unit:"g",portion:90,pcs:"naan",pcsW:90,fiber:2,sugar:3,sodium:418,iron:2.5,calcium:50,vitC:0,vitD:0,potassium:100},
+{name:"Paella",cat:"Meals",cal:120,pro:7,carb:13,fat:4,unit:"g",portion:250,fiber:1,sugar:1,sodium:400,iron:1.5,calcium:30,vitC:5,vitD:1,potassium:150},
+{name:"Risotto",cat:"Meals",cal:130,pro:3.5,carb:18,fat:5,unit:"g",portion:250,fiber:0.5,sugar:0.5,sodium:350,iron:0.5,calcium:40,vitC:0,vitD:0.1,potassium:60},
+{name:"Lasagna meat",cat:"Meals",cal:135,pro:8,carb:13,fat:6,unit:"g",portion:250,fiber:1.5,sugar:3,sodium:400,iron:1.5,calcium:100,vitC:3,vitD:0.2,potassium:180},
+{name:"Lasagna vegetable",cat:"Meals",cal:110,pro:5,carb:13,fat:4,unit:"g",portion:250,fiber:2,sugar:3,sodium:350,iron:1.0,calcium:80,vitC:5,vitD:0.1,potassium:170},
+{name:"Spaghetti bolognese",cat:"Meals",cal:120,pro:7,carb:13,fat:4,unit:"g",portion:300,fiber:1.5,sugar:3,sodium:350,iron:1.5,calcium:30,vitC:5,vitD:0.1,potassium:200},
+{name:"Spaghetti carbonara",cat:"Meals",cal:150,pro:8,carb:17,fat:6,unit:"g",portion:300,fiber:1,sugar:1,sodium:400,iron:1.2,calcium:80,vitC:0,vitD:0.3,potassium:120},
+{name:"Pasta pesto",cat:"Meals",cal:170,pro:6,carb:20,fat:8,unit:"g",portion:250,fiber:1.5,sugar:1,sodium:350,iron:1.5,calcium:80,vitC:2,vitD:0,potassium:120},
+{name:"Mac and cheese",cat:"Meals",cal:164,pro:6,carb:17,fat:8,unit:"g",portion:200,fiber:0.8,sugar:3,sodium:500,iron:1.2,calcium:150,vitC:0,vitD:0.2,potassium:100},
+{name:"Ravioli cheese",cat:"Meals",cal:140,pro:6,carb:18,fat:5,unit:"g",portion:200,fiber:1,sugar:2,sodium:380,iron:1.0,calcium:100,vitC:0,vitD:0.1,potassium:80},
+{name:"Poke bowl tuna",cat:"Meals",cal:120,pro:9,carb:14,fat:3,unit:"g",portion:300,fiber:2,sugar:3,sodium:500,iron:0.8,calcium:20,vitC:3,vitD:2,potassium:150},
+{name:"Bowl chicken rice",cat:"Meals",cal:130,pro:9,carb:15,fat:3.5,unit:"g",portion:350,fiber:1.5,sugar:1.5,sodium:400,iron:1.0,calcium:20,vitC:3,vitD:0.1,potassium:150},
+{name:"Buddha bowl",cat:"Meals",cal:105,pro:5,carb:14,fat:3.5,unit:"g",portion:400,fiber:4,sugar:2,sodium:300,iron:1.5,calcium:40,vitC:10,vitD:0,potassium:250},
+{name:"Acai bowl",cat:"Meals",cal:120,pro:2,carb:18,fat:5,unit:"g",portion:300,fiber:3,sugar:8,sodium:5,iron:0.5,calcium:30,vitC:10,vitD:0,potassium:200},
+{name:"Shawarma chicken",cat:"Meals",cal:170,pro:15,carb:8,fat:9,unit:"g",portion:200,fiber:1,sugar:2,sodium:500,iron:1.5,calcium:25,vitC:3,vitD:0.1,potassium:200},
+{name:"Gyro lamb",cat:"Meals",cal:217,pro:12,carb:15,fat:12,unit:"g",portion:200,fiber:1,sugar:2,sodium:550,iron:1.5,calcium:30,vitC:2,vitD:0.1,potassium:180},
+{name:"Kebab chicken",cat:"Meals",cal:155,pro:18,carb:3,fat:8,unit:"g",portion:150,fiber:0.5,sugar:1,sodium:450,iron:1.0,calcium:15,vitC:3,vitD:0.1,potassium:200},
+{name:"Kebab beef",cat:"Meals",cal:190,pro:16,carb:3,fat:13,unit:"g",portion:150,fiber:0.5,sugar:1,sodium:500,iron:2.0,calcium:15,vitC:2,vitD:0.1,potassium:220},
+{name:"Fish and chips",cat:"Meals",cal:200,pro:10,carb:18,fat:10,unit:"g",portion:300,fiber:2,sugar:1,sodium:400,iron:1.0,calcium:20,vitC:5,vitD:2,potassium:200},
+{name:"Shepherd's pie",cat:"Meals",cal:110,pro:6,carb:12,fat:4,unit:"g",portion:250,fiber:2,sugar:2,sodium:350,iron:1.5,calcium:30,vitC:5,vitD:0.1,potassium:200},
+{name:"Moussaka",cat:"Meals",cal:115,pro:6,carb:8,fat:7,unit:"g",portion:250,fiber:2,sugar:3,sodium:350,iron:1.0,calcium:60,vitC:5,vitD:0.1,potassium:200},
+{name:"Ratatouille",cat:"Meals",cal:35,pro:1,carb:5,fat:1.5,unit:"g",portion:200,fiber:2,sugar:3,sodium:150,iron:0.5,calcium:15,vitC:15,vitD:0,potassium:200},
+{name:"Quiche lorraine",cat:"Meals",cal:235,pro:10,carb:15,fat:15,unit:"g",portion:150,fiber:0.5,sugar:2,sodium:450,iron:1.2,calcium:100,vitC:0,vitD:0.5,potassium:120},
+{name:"Croque monsieur",cat:"Meals",cal:265,pro:14,carb:18,fat:15,unit:"g",portion:180,fiber:1,sugar:2,sodium:600,iron:1.5,calcium:200,vitC:0,vitD:0.3,potassium:130},
+{name:"Chili con carne",cat:"Meals",cal:95,pro:7,carb:8,fat:4,unit:"g",portion:250,fiber:4,sugar:2,sodium:500,iron:2.0,calcium:40,vitC:5,vitD:0.1,potassium:300},
+{name:"Jambalaya",cat:"Meals",cal:125,pro:7,carb:15,fat:4,unit:"g",portion:250,fiber:1.5,sugar:1.5,sodium:500,iron:1.5,calcium:20,vitC:5,vitD:0.1,potassium:180},
+{name:"Gumbo",cat:"Meals",cal:70,pro:4,carb:8,fat:2.5,unit:"g",portion:250,fiber:1.5,sugar:1,sodium:450,iron:1.0,calcium:30,vitC:5,vitD:0.1,potassium:150},
+{name:"Bibimbap",cat:"Meals",cal:100,pro:5,carb:15,fat:2,unit:"g",portion:350,fiber:2,sugar:2,sodium:500,iron:2.0,calcium:30,vitC:5,vitD:0.2,potassium:200},
+{name:"Ramen with broth and noodles",cat:"Meals",cal:60,pro:3,carb:8,fat:1.5,unit:"ml",portion:400,fiber:0.5,sugar:1,sodium:800,iron:0.8,calcium:10,vitC:0,vitD:0,potassium:80},
+{name:"Pho",cat:"Meals",cal:40,pro:3,carb:5,fat:0.5,unit:"ml",portion:400,fiber:0.3,sugar:0.5,sodium:400,iron:0.5,calcium:10,vitC:2,vitD:0,potassium:60},
+{name:"Tom yum soup",cat:"Meals",cal:30,pro:2,carb:4,fat:0.8,unit:"ml",portion:300,fiber:0.5,sugar:1,sodium:500,iron:0.3,calcium:10,vitC:5,vitD:0,potassium:80},
+{name:"Greek salad",cat:"Meals",cal:90,pro:4,carb:6,fat:6,unit:"g",portion:200,fiber:1.5,sugar:3,sodium:350,iron:0.5,calcium:80,vitC:15,vitD:0,potassium:180},
+{name:"Caesar salad",cat:"Meals",cal:120,pro:5,carb:8,fat:8,unit:"g",portion:200,fiber:1.5,sugar:1.5,sodium:400,iron:0.8,calcium:60,vitC:8,vitD:0.1,potassium:150},
+{name:"Cobb salad",cat:"Meals",cal:130,pro:10,carb:5,fat:8,unit:"g",portion:250,fiber:2,sugar:2,sodium:500,iron:1.0,calcium:50,vitC:10,vitD:0.3,potassium:250},
+{name:"Chicken salad",cat:"Meals",cal:160,pro:14,carb:3,fat:10,unit:"g",portion:150,fiber:0.5,sugar:1.5,sodium:400,iron:0.8,calcium:15,vitC:2,vitD:0.1,potassium:150},
+{name:"Egg salad",cat:"Meals",cal:225,pro:9,carb:2,fat:20,unit:"g",portion:100,fiber:0,sugar:1,sodium:350,iron:1.2,calcium:40,vitC:0,vitD:1,potassium:100},
+{name:"Potato salad",cat:"Meals",cal:143,pro:2,carb:14,fat:9,unit:"g",portion:150,fiber:1.5,sugar:3,sodium:350,iron:0.5,calcium:15,vitC:5,vitD:0,potassium:200},
+{name:"Pasta salad",cat:"Meals",cal:160,pro:4,carb:20,fat:7,unit:"g",portion:150,fiber:1.5,sugar:2,sodium:350,iron:1.0,calcium:20,vitC:3,vitD:0,potassium:100},
+{name:"Tabbouleh",cat:"Meals",cal:85,pro:2,carb:12,fat:3.5,unit:"g",portion:150,fiber:2.5,sugar:1,sodium:250,iron:1.0,calcium:20,vitC:10,vitD:0,potassium:150},
 
 // ── Snacks ──
-{name:"Beef jerky",cat:"Snacks",cal:410,pro:33,carb:11,fat:26,unit:"g",portion:30},
-{name:"Protein bar",cat:"Snacks",cal:350,pro:33,carb:37,fat:13,unit:"g",portion:60,pcs:"bar",pcsW:60},
-{name:"Granola bar",cat:"Snacks",cal:471,pro:10,carb:64,fat:20,unit:"g",portion:40,pcs:"bar",pcsW:40},
-{name:"Rice cakes",cat:"Snacks",cal:387,pro:8,carb:81,fat:2.8,unit:"g",portion:9,pcs:"cake",pcsW:9},
-{name:"Trail mix",cat:"Snacks",cal:462,pro:14,carb:45,fat:29,unit:"g",portion:40},
-{name:"Dark chocolate 70%",cat:"Snacks",cal:598,pro:8,carb:46,fat:43,unit:"g",portion:30},
-{name:"Milk chocolate",cat:"Snacks",cal:535,pro:8,carb:59,fat:30,unit:"g",portion:30},
-{name:"Popcorn air-popped",cat:"Snacks",cal:387,pro:13,carb:78,fat:4.5,unit:"g",portion:30},
-{name:"Popcorn butter",cat:"Snacks",cal:535,pro:9,carb:58,fat:31,unit:"g",portion:40},
-{name:"Chips potato",cat:"Snacks",cal:536,pro:7,carb:53,fat:35,unit:"g",portion:30},
-{name:"Chips tortilla",cat:"Snacks",cal:489,pro:7,carb:63,fat:24,unit:"g",portion:30},
-{name:"Pretzels",cat:"Snacks",cal:380,pro:10,carb:79,fat:3,unit:"g",portion:30},
-{name:"Crackers saltine",cat:"Snacks",cal:421,pro:9,carb:71,fat:11,unit:"g",portion:30},
-{name:"Crackers whole wheat",cat:"Snacks",cal:443,pro:10,carb:66,fat:16,unit:"g",portion:30},
-{name:"Graham crackers",cat:"Snacks",cal:430,pro:7,carb:74,fat:10,unit:"g",portion:30},
-{name:"Energy ball",cat:"Snacks",cal:400,pro:10,carb:45,fat:20,unit:"g",portion:30,pcs:"ball",pcsW:30},
-{name:"Fruit leather",cat:"Snacks",cal:330,pro:1,carb:78,fat:2,unit:"g",portion:20},
-{name:"Dried mango",cat:"Snacks",cal:319,pro:2,carb:78,fat:0.5,unit:"g",portion:40},
-{name:"Dried apricot",cat:"Snacks",cal:241,pro:3.4,carb:63,fat:0.5,unit:"g",portion:30},
-{name:"Edamame snack",cat:"Snacks",cal:122,pro:11,carb:10,fat:5,unit:"g",portion:80},
-{name:"Cheese puffs",cat:"Snacks",cal:533,pro:7,carb:56,fat:32,unit:"g",portion:30},
+{name:"Beef jerky",cat:"Snacks",cal:410,pro:33,carb:11,fat:26,unit:"g",portion:30,fiber:0.5,sugar:9,sodium:2081,iron:3.5,calcium:12,vitC:0,vitD:0,potassium:597},
+{name:"Protein bar",cat:"Snacks",cal:350,pro:33,carb:37,fat:13,unit:"g",portion:60,pcs:"bar",pcsW:60,fiber:5,sugar:8,sodium:300,iron:3.0,calcium:200,vitC:0,vitD:1,potassium:250},
+{name:"Granola bar",cat:"Snacks",cal:471,pro:10,carb:64,fat:20,unit:"g",portion:40,pcs:"bar",pcsW:40,fiber:3,sugar:25,sodium:180,iron:2.0,calcium:30,vitC:0,vitD:0,potassium:150},
+{name:"Rice cakes",cat:"Snacks",cal:387,pro:8,carb:81,fat:2.8,unit:"g",portion:9,pcs:"cake",pcsW:9,fiber:1.2,sugar:0.3,sodium:18,iron:0.7,calcium:3,vitC:0,vitD:0,potassium:58},
+{name:"Trail mix",cat:"Snacks",cal:462,pro:14,carb:45,fat:29,unit:"g",portion:40,fiber:3,sugar:20,sodium:120,iron:2.0,calcium:50,vitC:0,vitD:0,potassium:350},
+{name:"Dark chocolate 70%",cat:"Snacks",cal:598,pro:8,carb:46,fat:43,unit:"g",portion:30,fiber:11,sugar:24,sodium:20,iron:12,calcium:73,vitC:0,vitD:0,potassium:715},
+{name:"Milk chocolate",cat:"Snacks",cal:535,pro:8,carb:59,fat:30,unit:"g",portion:30,fiber:3.4,sugar:52,sodium:79,iron:2.4,calcium:189,vitC:0,vitD:0,potassium:372},
+{name:"Popcorn air-popped",cat:"Snacks",cal:387,pro:13,carb:78,fat:4.5,unit:"g",portion:30,fiber:14.5,sugar:0.9,sodium:8,iron:3.2,calcium:7,vitC:0,vitD:0,potassium:329},
+{name:"Popcorn butter",cat:"Snacks",cal:535,pro:9,carb:58,fat:31,unit:"g",portion:40,fiber:10,sugar:2,sodium:600,iron:2.5,calcium:10,vitC:0,vitD:0,potassium:250},
+{name:"Chips potato",cat:"Snacks",cal:536,pro:7,carb:53,fat:35,unit:"g",portion:30,fiber:4.8,sugar:0.3,sodium:525,iron:1.6,calcium:24,vitC:30,vitD:0,potassium:1196},
+{name:"Chips tortilla",cat:"Snacks",cal:489,pro:7,carb:63,fat:24,unit:"g",portion:30,fiber:4.7,sugar:1.5,sodium:528,iron:1.5,calcium:150,vitC:0,vitD:0,potassium:195},
+{name:"Pretzels",cat:"Snacks",cal:380,pro:10,carb:79,fat:3,unit:"g",portion:30,fiber:2,sugar:2.5,sodium:1357,iron:3.7,calcium:21,vitC:0,vitD:0,potassium:88},
+{name:"Crackers saltine",cat:"Snacks",cal:421,pro:9,carb:71,fat:11,unit:"g",portion:30,fiber:2.5,sugar:4,sodium:1072,iron:5.0,calcium:30,vitC:0,vitD:0,potassium:100},
+{name:"Crackers whole wheat",cat:"Snacks",cal:443,pro:10,carb:66,fat:16,unit:"g",portion:30,fiber:5.5,sugar:3,sodium:680,iron:3.0,calcium:40,vitC:0,vitD:0,potassium:200},
+{name:"Graham crackers",cat:"Snacks",cal:430,pro:7,carb:74,fat:10,unit:"g",portion:30,fiber:2,sugar:20,sodium:600,iron:3.5,calcium:20,vitC:0,vitD:0,potassium:100},
+{name:"Energy ball",cat:"Snacks",cal:400,pro:10,carb:45,fat:20,unit:"g",portion:30,pcs:"ball",pcsW:30,fiber:3,sugar:18,sodium:50,iron:2.0,calcium:40,vitC:0,vitD:0,potassium:200},
+{name:"Fruit leather",cat:"Snacks",cal:330,pro:1,carb:78,fat:2,unit:"g",portion:20,fiber:2,sugar:60,sodium:50,iron:0.5,calcium:10,vitC:5,vitD:0,potassium:60},
+{name:"Dried mango",cat:"Snacks",cal:319,pro:2,carb:78,fat:0.5,unit:"g",portion:40,fiber:2,sugar:60,sodium:50,iron:0.3,calcium:15,vitC:10,vitD:0,potassium:200},
+{name:"Dried apricot",cat:"Snacks",cal:241,pro:3.4,carb:63,fat:0.5,unit:"g",portion:30,fiber:7.3,sugar:53,sodium:10,iron:2.7,calcium:55,vitC:1,vitD:0,potassium:1162},
+{name:"Edamame snack",cat:"Snacks",cal:122,pro:11,carb:10,fat:5,unit:"g",portion:80,fiber:5.2,sugar:2.2,sodium:6,iron:2.3,calcium:63,vitC:6,vitD:0,potassium:436},
+{name:"Cheese puffs",cat:"Snacks",cal:533,pro:7,carb:56,fat:32,unit:"g",portion:30,fiber:1,sugar:3,sodium:800,iron:2.0,calcium:60,vitC:0,vitD:0,potassium:100},
 
 // ── Baked Goods & Desserts ──
-{name:"Cookie chocolate chip",cat:"Baked",cal:488,pro:5,carb:64,fat:24,unit:"g",portion:40,pcs:"cookie",pcsW:40},
-{name:"Cookie oatmeal raisin",cat:"Baked",cal:450,pro:6,carb:67,fat:18,unit:"g",portion:40,pcs:"cookie",pcsW:40},
-{name:"Brownie",cat:"Baked",cal:466,pro:5,carb:60,fat:24,unit:"g",portion:60,pcs:"brownie",pcsW:60},
-{name:"Donut glazed",cat:"Baked",cal:421,pro:5,carb:51,fat:22,unit:"g",portion:60,pcs:"donut",pcsW:60},
-{name:"Donut chocolate",cat:"Baked",cal:452,pro:5,carb:55,fat:24,unit:"g",portion:65,pcs:"donut",pcsW:65},
-{name:"Cinnamon roll",cat:"Baked",cal:400,pro:5,carb:48,fat:21,unit:"g",portion:80},
-{name:"Danish pastry",cat:"Baked",cal:374,pro:6,carb:41,fat:21,unit:"g",portion:70},
-{name:"Scone",cat:"Baked",cal:362,pro:7,carb:44,fat:18,unit:"g",portion:80},
-{name:"Biscuit",cat:"Baked",cal:342,pro:6,carb:42,fat:16,unit:"g",portion:60,pcs:"biscuit",pcsW:60},
-{name:"Cornbread",cat:"Baked",cal:266,pro:6,carb:34,fat:12,unit:"g",portion:65},
-{name:"Banana bread",cat:"Baked",cal:326,pro:4,carb:48,fat:14,unit:"g",portion:60,pcs:"slice",pcsW:60},
-{name:"Pound cake",cat:"Baked",cal:353,pro:5,carb:44,fat:18,unit:"g",portion:80},
-{name:"Cheesecake",cat:"Baked",cal:321,pro:6,carb:26,fat:22,unit:"g",portion:125},
-{name:"Carrot cake",cat:"Baked",cal:340,pro:4,carb:42,fat:18,unit:"g",portion:110},
-{name:"Chocolate cake",cat:"Baked",cal:371,pro:5,carb:51,fat:18,unit:"g",portion:110},
-{name:"Tiramisu",cat:"Baked",cal:283,pro:6,carb:26,fat:17,unit:"g",portion:120},
-{name:"Crème brûlée",cat:"Baked",cal:240,pro:4,carb:20,fat:16,unit:"g",portion:120},
-{name:"Apple pie",cat:"Baked",cal:237,pro:2,carb:34,fat:11,unit:"g",portion:125,pcs:"slice",pcsW:125},
-{name:"Pumpkin pie",cat:"Baked",cal:210,pro:4,carb:27,fat:10,unit:"g",portion:125,pcs:"slice",pcsW:125},
-{name:"Pecan pie",cat:"Baked",cal:405,pro:5,carb:50,fat:22,unit:"g",portion:125},
-{name:"Churro",cat:"Baked",cal:400,pro:4,carb:46,fat:22,unit:"g",portion:40,pcs:"churro",pcsW:40},
-{name:"Macaron",cat:"Baked",cal:400,pro:7,carb:64,fat:13,unit:"g",portion:15,pcs:"macaron",pcsW:15},
-{name:"Pain au chocolat",cat:"Baked",cal:420,pro:8,carb:44,fat:24,unit:"g",portion:75,pcs:"pastry",pcsW:75},
-{name:"Éclair",cat:"Baked",cal:262,pro:6,carb:24,fat:16,unit:"g",portion:100},
-{name:"Pudding chocolate",cat:"Baked",cal:119,pro:3,carb:20,fat:3.5,unit:"g",portion:130},
-{name:"Rice pudding",cat:"Baked",cal:121,pro:3,carb:19,fat:4,unit:"g",portion:150},
+{name:"Cookie chocolate chip",cat:"Baked",cal:488,pro:5,carb:64,fat:24,unit:"g",portion:40,pcs:"cookie",pcsW:40,fiber:2,sugar:35,sodium:349,iron:2.5,calcium:25,vitC:0,vitD:0.1,potassium:120},
+{name:"Cookie oatmeal raisin",cat:"Baked",cal:450,pro:6,carb:67,fat:18,unit:"g",portion:40,pcs:"cookie",pcsW:40,fiber:2.5,sugar:32,sodium:300,iron:2.0,calcium:30,vitC:0,vitD:0,potassium:150},
+{name:"Brownie",cat:"Baked",cal:466,pro:5,carb:60,fat:24,unit:"g",portion:60,pcs:"brownie",pcsW:60,fiber:1.5,sugar:40,sodium:250,iron:2.5,calcium:30,vitC:0,vitD:0.1,potassium:130},
+{name:"Donut glazed",cat:"Baked",cal:421,pro:5,carb:51,fat:22,unit:"g",portion:60,pcs:"donut",pcsW:60,fiber:1,sugar:25,sodium:350,iron:1.5,calcium:20,vitC:0,vitD:0.1,potassium:60},
+{name:"Donut chocolate",cat:"Baked",cal:452,pro:5,carb:55,fat:24,unit:"g",portion:65,pcs:"donut",pcsW:65,fiber:1.5,sugar:28,sodium:360,iron:2.0,calcium:30,vitC:0,vitD:0.1,potassium:90},
+{name:"Cinnamon roll",cat:"Baked",cal:400,pro:5,carb:48,fat:21,unit:"g",portion:80,fiber:1.5,sugar:25,sodium:380,iron:1.8,calcium:40,vitC:0,vitD:0.1,potassium:80},
+{name:"Danish pastry",cat:"Baked",cal:374,pro:6,carb:41,fat:21,unit:"g",portion:70,fiber:1,sugar:18,sodium:300,iron:1.5,calcium:30,vitC:0,vitD:0.1,potassium:70},
+{name:"Scone",cat:"Baked",cal:362,pro:7,carb:44,fat:18,unit:"g",portion:80,fiber:1.5,sugar:12,sodium:380,iron:2.0,calcium:80,vitC:0,vitD:0.1,potassium:100},
+{name:"Biscuit",cat:"Baked",cal:342,pro:6,carb:42,fat:16,unit:"g",portion:60,pcs:"biscuit",pcsW:60,fiber:1.2,sugar:5,sodium:580,iron:2.2,calcium:65,vitC:0,vitD:0,potassium:80},
+{name:"Cornbread",cat:"Baked",cal:266,pro:6,carb:34,fat:12,unit:"g",portion:65,fiber:2,sugar:8,sodium:460,iron:2.0,calcium:45,vitC:0,vitD:0.1,potassium:100},
+{name:"Banana bread",cat:"Baked",cal:326,pro:4,carb:48,fat:14,unit:"g",portion:60,pcs:"slice",pcsW:60,fiber:1,sugar:28,sodium:300,iron:1.5,calcium:20,vitC:2,vitD:0.1,potassium:120},
+{name:"Pound cake",cat:"Baked",cal:353,pro:5,carb:44,fat:18,unit:"g",portion:80,fiber:0.5,sugar:25,sodium:280,iron:1.5,calcium:25,vitC:0,vitD:0.2,potassium:60},
+{name:"Cheesecake",cat:"Baked",cal:321,pro:6,carb:26,fat:22,unit:"g",portion:125,fiber:0.3,sugar:18,sodium:270,iron:0.8,calcium:60,vitC:1,vitD:0.2,potassium:100},
+{name:"Carrot cake",cat:"Baked",cal:340,pro:4,carb:42,fat:18,unit:"g",portion:110,fiber:1.5,sugar:28,sodium:280,iron:1.2,calcium:30,vitC:1,vitD:0.1,potassium:100},
+{name:"Chocolate cake",cat:"Baked",cal:371,pro:5,carb:51,fat:18,unit:"g",portion:110,fiber:2,sugar:35,sodium:350,iron:2.5,calcium:40,vitC:0,vitD:0.1,potassium:150},
+{name:"Tiramisu",cat:"Baked",cal:283,pro:6,carb:26,fat:17,unit:"g",portion:120,fiber:0.3,sugar:18,sodium:60,iron:0.5,calcium:60,vitC:0,vitD:0.3,potassium:80},
+{name:"Crème brûlée",cat:"Baked",cal:240,pro:4,carb:20,fat:16,unit:"g",portion:120,fiber:0,sugar:16,sodium:50,iron:0.3,calcium:80,vitC:0,vitD:0.5,potassium:100},
+{name:"Apple pie",cat:"Baked",cal:237,pro:2,carb:34,fat:11,unit:"g",portion:125,pcs:"slice",pcsW:125,fiber:1.6,sugar:15,sodium:250,iron:0.8,calcium:15,vitC:2,vitD:0,potassium:80},
+{name:"Pumpkin pie",cat:"Baked",cal:210,pro:4,carb:27,fat:10,unit:"g",portion:125,pcs:"slice",pcsW:125,fiber:1.5,sugar:15,sodium:300,iron:1.0,calcium:40,vitC:2,vitD:0.1,potassium:150},
+{name:"Pecan pie",cat:"Baked",cal:405,pro:5,carb:50,fat:22,unit:"g",portion:125,fiber:2,sugar:28,sodium:320,iron:1.5,calcium:20,vitC:0,vitD:0.1,potassium:100},
+{name:"Churro",cat:"Baked",cal:400,pro:4,carb:46,fat:22,unit:"g",portion:40,pcs:"churro",pcsW:40,fiber:1,sugar:20,sodium:200,iron:1.5,calcium:15,vitC:0,vitD:0,potassium:40},
+{name:"Macaron",cat:"Baked",cal:400,pro:7,carb:64,fat:13,unit:"g",portion:15,pcs:"macaron",pcsW:15,fiber:1,sugar:55,sodium:30,iron:0.8,calcium:50,vitC:0,vitD:0,potassium:50},
+{name:"Pain au chocolat",cat:"Baked",cal:420,pro:8,carb:44,fat:24,unit:"g",portion:75,pcs:"pastry",pcsW:75,fiber:2,sugar:15,sodium:300,iron:2.0,calcium:30,vitC:0,vitD:0.1,potassium:100},
+{name:"Éclair",cat:"Baked",cal:262,pro:6,carb:24,fat:16,unit:"g",portion:100,fiber:0.5,sugar:14,sodium:250,iron:1.0,calcium:30,vitC:0,vitD:0.2,potassium:60},
+{name:"Pudding chocolate",cat:"Baked",cal:119,pro:3,carb:20,fat:3.5,unit:"g",portion:130,fiber:0.5,sugar:14,sodium:130,iron:0.3,calcium:80,vitC:0,vitD:0.1,potassium:150},
+{name:"Rice pudding",cat:"Baked",cal:121,pro:3,carb:19,fat:4,unit:"g",portion:150,fiber:0.3,sugar:12,sodium:100,iron:0.2,calcium:90,vitC:0,vitD:0.1,potassium:120},
 
 // ── Drinks ──
-{name:"Orange juice",cat:"Drinks",cal:45,pro:0.7,carb:10,fat:0.2,unit:"ml",portion:250},
-{name:"Apple juice",cat:"Drinks",cal:46,pro:0.1,carb:11,fat:0.1,unit:"ml",portion:250},
-{name:"Cranberry juice",cat:"Drinks",cal:46,pro:0.4,carb:12,fat:0.1,unit:"ml",portion:250},
-{name:"Grape juice",cat:"Drinks",cal:60,pro:0.4,carb:15,fat:0.1,unit:"ml",portion:250},
-{name:"Green smoothie",cat:"Drinks",cal:50,pro:2,carb:9,fat:0.5,unit:"ml",portion:350},
-{name:"Protein shake ready",cat:"Drinks",cal:60,pro:10,carb:3,fat:1,unit:"ml",portion:330},
-{name:"Smoothie berry protein",cat:"Drinks",cal:55,pro:4,carb:8,fat:0.5,unit:"ml",portion:350},
-{name:"Smoothie banana peanut butter",cat:"Drinks",cal:80,pro:4,carb:12,fat:2.5,unit:"ml",portion:350},
-{name:"Oat milk",cat:"Drinks",cal:43,pro:1,carb:7,fat:1.5,unit:"ml",portion:250},
-{name:"Soy milk",cat:"Drinks",cal:33,pro:2.8,carb:1.2,fat:1.8,unit:"ml",portion:250},
-{name:"Almond milk unsweetened",cat:"Drinks",cal:15,pro:0.6,carb:0.3,fat:1.2,unit:"ml",portion:250},
-{name:"Coconut milk canned",cat:"Drinks",cal:197,pro:2.2,carb:3,fat:21,unit:"ml",portion:100},
-{name:"Coconut water",cat:"Drinks",cal:19,pro:0.7,carb:4,fat:0.2,unit:"ml",portion:250},
-{name:"Lemonade",cat:"Drinks",cal:40,pro:0,carb:10,fat:0,unit:"ml",portion:250},
-{name:"Iced tea sweetened",cat:"Drinks",cal:33,pro:0,carb:8,fat:0,unit:"ml",portion:250},
-{name:"Cola",cat:"Drinks",cal:42,pro:0,carb:11,fat:0,unit:"ml",portion:330},
-{name:"Ginger ale",cat:"Drinks",cal:34,pro:0,carb:9,fat:0,unit:"ml",portion:330},
-{name:"Sports drink",cat:"Drinks",cal:26,pro:0,carb:7,fat:0,unit:"ml",portion:500},
-{name:"Energy drink",cat:"Drinks",cal:45,pro:0,carb:11,fat:0,unit:"ml",portion:250},
-{name:"Coffee black",cat:"Drinks",cal:2,pro:0.3,carb:0,fat:0,unit:"ml",portion:250},
-{name:"Coffee latte",cat:"Drinks",cal:40,pro:2.5,carb:4,fat:1.5,unit:"ml",portion:350},
-{name:"Coffee cappuccino",cat:"Drinks",cal:35,pro:2.5,carb:3.5,fat:1.5,unit:"ml",portion:240},
-{name:"Coffee mocha",cat:"Drinks",cal:60,pro:3,carb:8,fat:2,unit:"ml",portion:350},
-{name:"Coffee espresso",cat:"Drinks",cal:3,pro:0.2,carb:0.5,fat:0,unit:"ml",portion:30},
-{name:"Hot chocolate",cat:"Drinks",cal:77,pro:3,carb:11,fat:2.5,unit:"ml",portion:250},
-{name:"Matcha latte",cat:"Drinks",cal:55,pro:2.5,carb:7,fat:2,unit:"ml",portion:350},
-{name:"Chai latte",cat:"Drinks",cal:55,pro:2,carb:9,fat:1.5,unit:"ml",portion:350},
-{name:"Beer regular",cat:"Drinks",cal:43,pro:0.5,carb:4,fat:0,unit:"ml",portion:355},
-{name:"Beer light",cat:"Drinks",cal:29,pro:0.3,carb:2,fat:0,unit:"ml",portion:355},
-{name:"Wine red",cat:"Drinks",cal:85,pro:0.1,carb:3,fat:0,unit:"ml",portion:150},
-{name:"Wine white",cat:"Drinks",cal:82,pro:0.1,carb:3,fat:0,unit:"ml",portion:150},
-{name:"Kombucha",cat:"Drinks",cal:17,pro:0,carb:4,fat:0,unit:"ml",portion:250},
+{name:"Orange juice",cat:"Drinks",cal:45,pro:0.7,carb:10,fat:0.2,unit:"ml",portion:250,fiber:0.2,sugar:8.4,sodium:1,iron:0.2,calcium:11,vitC:50,vitD:0,potassium:200},
+{name:"Apple juice",cat:"Drinks",cal:46,pro:0.1,carb:11,fat:0.1,unit:"ml",portion:250,fiber:0.1,sugar:10,sodium:4,iron:0.1,calcium:8,vitC:1,vitD:0,potassium:101},
+{name:"Cranberry juice",cat:"Drinks",cal:46,pro:0.4,carb:12,fat:0.1,unit:"ml",portion:250,fiber:0.1,sugar:12,sodium:2,iron:0.3,calcium:8,vitC:9.3,vitD:0,potassium:77},
+{name:"Grape juice",cat:"Drinks",cal:60,pro:0.4,carb:15,fat:0.1,unit:"ml",portion:250,fiber:0.2,sugar:14,sodium:5,iron:0.3,calcium:11,vitC:0,vitD:0,potassium:104},
+{name:"Green smoothie",cat:"Drinks",cal:50,pro:2,carb:9,fat:0.5,unit:"ml",portion:350,fiber:0.8,sugar:5,sodium:25,iron:0.5,calcium:30,vitC:20,vitD:0,potassium:150},
+{name:"Protein shake ready",cat:"Drinks",cal:60,pro:10,carb:3,fat:1,unit:"ml",portion:330,fiber:1,sugar:1,sodium:200,iron:1.5,calcium:200,vitC:10,vitD:2,potassium:250},
+{name:"Smoothie berry protein",cat:"Drinks",cal:55,pro:4,carb:8,fat:0.5,unit:"ml",portion:350,fiber:1,sugar:5,sodium:30,iron:0.5,calcium:50,vitC:15,vitD:0,potassium:120},
+{name:"Smoothie banana peanut butter",cat:"Drinks",cal:80,pro:4,carb:12,fat:2.5,unit:"ml",portion:350,fiber:1,sugar:8,sodium:40,iron:0.3,calcium:30,vitC:4,vitD:0,potassium:200},
+{name:"Oat milk",cat:"Drinks",cal:43,pro:1,carb:7,fat:1.5,unit:"ml",portion:250,fiber:0.8,sugar:4,sodium:40,iron:0.3,calcium:120,vitC:0,vitD:1.5,potassium:40},
+{name:"Soy milk",cat:"Drinks",cal:33,pro:2.8,carb:1.2,fat:1.8,unit:"ml",portion:250,fiber:0.6,sugar:1,sodium:47,iron:0.6,calcium:25,vitC:0,vitD:1.2,potassium:118},
+{name:"Almond milk unsweetened",cat:"Drinks",cal:15,pro:0.6,carb:0.3,fat:1.2,unit:"ml",portion:250,fiber:0.2,sugar:0,sodium:60,iron:0.3,calcium:120,vitC:0,vitD:1,potassium:50},
+{name:"Coconut milk canned",cat:"Drinks",cal:197,pro:2.2,carb:3,fat:21,unit:"ml",portion:100,fiber:0,sugar:2,sodium:13,iron:1.6,calcium:16,vitC:1,vitD:0,potassium:220},
+{name:"Coconut water",cat:"Drinks",cal:19,pro:0.7,carb:4,fat:0.2,unit:"ml",portion:250,fiber:0,sugar:3,sodium:105,iron:0.3,calcium:24,vitC:2.4,vitD:0,potassium:250},
+{name:"Lemonade",cat:"Drinks",cal:40,pro:0,carb:10,fat:0,unit:"ml",portion:250,fiber:0,sugar:9.6,sodium:3,iron:0,calcium:3,vitC:4,vitD:0,potassium:15},
+{name:"Iced tea sweetened",cat:"Drinks",cal:33,pro:0,carb:8,fat:0,unit:"ml",portion:250,fiber:0,sugar:8,sodium:5,iron:0,calcium:0,vitC:0,vitD:0,potassium:10},
+{name:"Cola",cat:"Drinks",cal:42,pro:0,carb:11,fat:0,unit:"ml",portion:330,fiber:0,sugar:10.6,sodium:4,iron:0,calcium:2,vitC:0,vitD:0,potassium:2},
+{name:"Ginger ale",cat:"Drinks",cal:34,pro:0,carb:9,fat:0,unit:"ml",portion:330,fiber:0,sugar:8.8,sodium:7,iron:0.2,calcium:3,vitC:0,vitD:0,potassium:1},
+{name:"Sports drink",cat:"Drinks",cal:26,pro:0,carb:7,fat:0,unit:"ml",portion:500,fiber:0,sugar:6,sodium:41,iron:0,calcium:0,vitC:0,vitD:0,potassium:12},
+{name:"Energy drink",cat:"Drinks",cal:45,pro:0,carb:11,fat:0,unit:"ml",portion:250,fiber:0,sugar:11,sodium:40,iron:0,calcium:0,vitC:0,vitD:0,potassium:5},
+{name:"Coffee black",cat:"Drinks",cal:2,pro:0.3,carb:0,fat:0,unit:"ml",portion:250,fiber:0,sugar:0,sodium:5,iron:0,calcium:2,vitC:0,vitD:0,potassium:49},
+{name:"Coffee latte",cat:"Drinks",cal:40,pro:2.5,carb:4,fat:1.5,unit:"ml",portion:350,fiber:0,sugar:3,sodium:30,iron:0,calcium:75,vitC:0,vitD:0.4,potassium:90},
+{name:"Coffee cappuccino",cat:"Drinks",cal:35,pro:2.5,carb:3.5,fat:1.5,unit:"ml",portion:240,fiber:0,sugar:3,sodium:25,iron:0,calcium:70,vitC:0,vitD:0.3,potassium:80},
+{name:"Coffee mocha",cat:"Drinks",cal:60,pro:3,carb:8,fat:2,unit:"ml",portion:350,fiber:0.3,sugar:6,sodium:35,iron:0.3,calcium:60,vitC:0,vitD:0.3,potassium:100},
+{name:"Coffee espresso",cat:"Drinks",cal:3,pro:0.2,carb:0.5,fat:0,unit:"ml",portion:30,fiber:0,sugar:0,sodium:14,iron:0.1,calcium:2,vitC:0,vitD:0,potassium:115},
+{name:"Hot chocolate",cat:"Drinks",cal:77,pro:3,carb:11,fat:2.5,unit:"ml",portion:250,fiber:0.5,sugar:8,sodium:50,iron:0.3,calcium:80,vitC:0,vitD:0.5,potassium:120},
+{name:"Matcha latte",cat:"Drinks",cal:55,pro:2.5,carb:7,fat:2,unit:"ml",portion:350,fiber:0.3,sugar:5,sodium:25,iron:0.3,calcium:60,vitC:1,vitD:0.3,potassium:80},
+{name:"Chai latte",cat:"Drinks",cal:55,pro:2,carb:9,fat:1.5,unit:"ml",portion:350,fiber:0,sugar:7,sodium:30,iron:0.2,calcium:60,vitC:0,vitD:0.3,potassium:70},
+{name:"Beer regular",cat:"Drinks",cal:43,pro:0.5,carb:4,fat:0,unit:"ml",portion:355,fiber:0,sugar:0,sodium:4,iron:0,calcium:4,vitC:0,vitD:0,potassium:27},
+{name:"Beer light",cat:"Drinks",cal:29,pro:0.3,carb:2,fat:0,unit:"ml",portion:355,fiber:0,sugar:0.1,sodium:3,iron:0,calcium:4,vitC:0,vitD:0,potassium:20},
+{name:"Wine red",cat:"Drinks",cal:85,pro:0.1,carb:3,fat:0,unit:"ml",portion:150,fiber:0,sugar:0.6,sodium:4,iron:0.5,calcium:8,vitC:0,vitD:0,potassium:127},
+{name:"Wine white",cat:"Drinks",cal:82,pro:0.1,carb:3,fat:0,unit:"ml",portion:150,fiber:0,sugar:1,sodium:4,iron:0.3,calcium:9,vitC:0,vitD:0,potassium:71},
+{name:"Kombucha",cat:"Drinks",cal:17,pro:0,carb:4,fat:0,unit:"ml",portion:250,fiber:0,sugar:3,sodium:5,iron:0.1,calcium:5,vitC:1,vitD:0,potassium:20},
 
 // ── Misc & Baking ──
-{name:"Sugar white",cat:"Other",cal:387,pro:0,carb:100,fat:0,unit:"g",portion:10},
-{name:"Sugar brown",cat:"Other",cal:380,pro:0,carb:98,fat:0,unit:"g",portion:10},
-{name:"Cocoa powder",cat:"Other",cal:228,pro:20,carb:58,fat:14,unit:"g",portion:10},
-{name:"Flour all-purpose",cat:"Other",cal:364,pro:10,carb:76,fat:1,unit:"g",portion:30},
-{name:"Flour whole wheat",cat:"Other",cal:340,pro:13,carb:72,fat:2.5,unit:"g",portion:30},
-{name:"Flour almond",cat:"Other",cal:571,pro:21,carb:21,fat:50,unit:"g",portion:30},
-{name:"Flour coconut",cat:"Other",cal:443,pro:17,carb:60,fat:14,unit:"g",portion:20},
-{name:"Cornstarch",cat:"Other",cal:381,pro:0.3,carb:91,fat:0.1,unit:"g",portion:10},
-{name:"Nutritional yeast",cat:"Other",cal:325,pro:50,carb:35,fat:4,unit:"g",portion:10},
-{name:"Spirulina powder",cat:"Other",cal:290,pro:57,carb:24,fat:8,unit:"g",portion:7},
-{name:"Collagen powder",cat:"Other",cal:360,pro:90,carb:0,fat:0,unit:"g",portion:10},
-{name:"Creatine monohydrate",cat:"Other",cal:0,pro:0,carb:0,fat:0,unit:"g",portion:5},
+{name:"Sugar white",cat:"Other",cal:387,pro:0,carb:100,fat:0,unit:"g",portion:10,fiber:0,sugar:100,sodium:1,iron:0,calcium:1,vitC:0,vitD:0,potassium:2},
+{name:"Sugar brown",cat:"Other",cal:380,pro:0,carb:98,fat:0,unit:"g",portion:10,fiber:0,sugar:97,sodium:39,iron:0.7,calcium:83,vitC:0,vitD:0,potassium:133},
+{name:"Cocoa powder",cat:"Other",cal:228,pro:20,carb:58,fat:14,unit:"g",portion:10,fiber:33.2,sugar:1.8,sodium:21,iron:13.9,calcium:128,vitC:0,vitD:0,potassium:1524},
+{name:"Flour all-purpose",cat:"Other",cal:364,pro:10,carb:76,fat:1,unit:"g",portion:30,fiber:2.7,sugar:0.3,sodium:2,iron:4.6,calcium:15,vitC:0,vitD:0,potassium:107},
+{name:"Flour whole wheat",cat:"Other",cal:340,pro:13,carb:72,fat:2.5,unit:"g",portion:30,fiber:10.7,sugar:0.4,sodium:2,iron:3.6,calcium:34,vitC:0,vitD:0,potassium:363},
+{name:"Flour almond",cat:"Other",cal:571,pro:21,carb:21,fat:50,unit:"g",portion:30,fiber:10,sugar:4,sodium:1,iron:3.5,calcium:236,vitC:0,vitD:0,potassium:680},
+{name:"Flour coconut",cat:"Other",cal:443,pro:17,carb:60,fat:14,unit:"g",portion:20,fiber:39,sugar:8,sodium:20,iron:3.6,calcium:20,vitC:0,vitD:0,potassium:550},
+{name:"Cornstarch",cat:"Other",cal:381,pro:0.3,carb:91,fat:0.1,unit:"g",portion:10,fiber:0.9,sugar:0,sodium:9,iron:0.5,calcium:2,vitC:0,vitD:0,potassium:3},
+{name:"Nutritional yeast",cat:"Other",cal:325,pro:50,carb:35,fat:4,unit:"g",portion:10,fiber:6,sugar:0,sodium:25,iron:5.0,calcium:20,vitC:0,vitD:0,potassium:300},
+{name:"Spirulina powder",cat:"Other",cal:290,pro:57,carb:24,fat:8,unit:"g",portion:7,fiber:3.6,sugar:3.1,sodium:1048,iron:28.5,calcium:120,vitC:10,vitD:0,potassium:1363},
+{name:"Collagen powder",cat:"Other",cal:360,pro:90,carb:0,fat:0,unit:"g",portion:10,fiber:0,sugar:0,sodium:50,iron:0,calcium:10,vitC:0,vitD:0,potassium:20},
+{name:"Creatine monohydrate",cat:"Other",cal:0,pro:0,carb:0,fat:0,unit:"g",portion:5,fiber:0,sugar:0,sodium:0,iron:0,calcium:0,vitC:0,vitD:0,potassium:0},
 ];
 
 // ========== SERVING SIZE SYSTEM ==========
@@ -1141,7 +1174,10 @@ function formatServingDisplay(food, servingLabel, qty) {
 const STORE_KEY = 'macroTracker';
 const GOALS_KEY = 'macroTrackerGoals';
 
-function todayKey(){ return new Date().toISOString().slice(0,10); }
+function todayKey(){
+  const d=new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
 
 function loadGoals(){
   try{ const g=JSON.parse(localStorage.getItem(GOALS_KEY)); if(g&&g.cal) return g; } catch(e){}
@@ -1178,6 +1214,8 @@ function saveTodayMeals(){
     const store=JSON.parse(localStorage.getItem(STORE_KEY))||{};
     const key=todayKey();
     const t=getDayTotals();
+    // Include micronutrients in totals
+    MICRO_KEYS.forEach(function(mk){ if(!t[mk]) t[mk]=0; });
     store[key]={
       meals:{
         breakfast:meals.breakfast.items,
@@ -1187,6 +1225,7 @@ function saveTodayMeals(){
       },
       totals:t,
       goals:{...goals},
+      savedAt:todayKey(),
       saved:new Date().toISOString()
     };
     localStorage.setItem(STORE_KEY, JSON.stringify(store));
@@ -1203,6 +1242,21 @@ let openMeals = {breakfast:true,lunch:false,dinner:false,snacks:false};
 let modalItem = null;
 let trendRange = 7;
 
+// Micronutrient tracking
+const MICRO_KEYS = ['fiber','sugar','sodium','iron','calcium','vitC','vitD','potassium'];
+const MICRO_META = {
+  fiber:     {name:'Fiber',     unit:'g',  goal:28,   color:'#6b8e5e'},
+  sugar:     {name:'Sugar',     unit:'g',  goal:50,   color:'#c97a2a'},
+  sodium:    {name:'Sodium',    unit:'mg', goal:2300, color:'#8e5e5e'},
+  iron:      {name:'Iron',      unit:'mg', goal:18,   color:'#7a5e3e'},
+  calcium:   {name:'Calcium',   unit:'mg', goal:1000, color:'#5e7a8e'},
+  vitC:      {name:'Vit C',     unit:'mg', goal:90,   color:'#8e8e2a'},
+  vitD:      {name:'Vit D',     unit:'µg', goal:20,   color:'#ae7e3e'},
+  potassium: {name:'Potassium', unit:'mg', goal:3400, color:'#5e6a8e'}
+};
+function emptyMicros(){ return {fiber:0,sugar:0,sodium:0,iron:0,calcium:0,vitC:0,vitD:0,potassium:0}; }
+
+
 // ========== DATE ==========
 const today = new Date();
 document.getElementById('dateDisplay').textContent = today.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
@@ -1210,12 +1264,22 @@ document.getElementById('dateDisplay').textContent = today.toLocaleDateString('e
 // ========== UTILS ==========
 function pct(v,g){return g>0?Math.min(100,Math.round(v/g*100)):0}
 function r(v){return Math.round(v)}
-function getTotals(k){return meals[k].items.reduce((t,i)=>({cal:t.cal+i.cal,pro:t.pro+i.pro,carb:t.carb+i.carb,fat:t.fat+i.fat}),{cal:0,pro:0,carb:0,fat:0})}
-function getDayTotals(){return Object.keys(meals).reduce((t,k)=>{const m=getTotals(k);return{cal:t.cal+m.cal,pro:t.pro+m.pro,carb:t.carb+m.carb,fat:t.fat+m.fat}},{cal:0,pro:0,carb:0,fat:0})}
+function getTotals(k){return meals[k].items.reduce((t,i)=>{
+  const r={cal:t.cal+i.cal,pro:t.pro+i.pro,carb:t.carb+i.carb,fat:t.fat+i.fat};
+  MICRO_KEYS.forEach(mk=>{r[mk]=(t[mk]||0)+(i[mk]||0);});
+  return r;
+},{cal:0,pro:0,carb:0,fat:0,...emptyMicros()})}
+function getDayTotals(){return Object.keys(meals).reduce((t,k)=>{const m=getTotals(k);
+  const r={cal:t.cal+m.cal,pro:t.pro+m.pro,carb:t.carb+m.carb,fat:t.fat+m.fat};
+  MICRO_KEYS.forEach(mk=>{r[mk]=(t[mk]||0)+(m[mk]||0);});
+  return r;
+},{cal:0,pro:0,carb:0,fat:0,...emptyMicros()})}
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000)}
 function calcFromDB(food,qty){
   const f=qty/100;
-  return{cal:r(food.cal*f),pro:r(food.pro*f),carb:r(food.carb*f),fat:r(food.fat*f)};
+  const result={cal:r(food.cal*f),pro:r(food.pro*f),carb:r(food.carb*f),fat:r(food.fat*f)};
+  MICRO_KEYS.forEach(mk=>{ if(food[mk]!==undefined) result[mk]=Math.round(food[mk]*f*10)/10; });
+  return result;
 }
 
 // ========== TABS ==========
@@ -1280,6 +1344,32 @@ function renderSummary(){
         <div class="pbar-wrap"><div class="pbar fat-bg" style="width:${pct(t.fat,goals.fat)}%"></div></div>
       </div>
     </div>`;
+}
+
+
+function renderMicros(){
+  const t=getDayTotals();
+  const hasMicros=MICRO_KEYS.some(k=>t[k]>0);
+  const el=document.getElementById('microCard');
+  if(!hasMicros){
+    el.innerHTML='<div class="micro-card"><h3>Micronutrients</h3><p class="micro-note">Add foods to start tracking vitamins &amp; minerals.</p></div>';
+    return;
+  }
+  let grid='';
+  MICRO_KEYS.forEach(k=>{
+    const m=MICRO_META[k];
+    const val=Math.round(t[k]*10)/10;
+    if(val===0) return;
+    const p=m.goal>0?Math.min(100,Math.round(val/m.goal*100)):0;
+    const barClass=p>=80?'good':p>=150?'over':'';
+    grid+='<div class="micro-item">'+
+      '<div class="mi-top"><span class="mi-name">'+m.name+'</span><span class="mi-val" style="color:'+m.color+'">'+val+m.unit+'</span></div>'+
+      '<div class="mi-goal">'+p+'% of '+m.goal+m.unit+'</div>'+
+      '<div class="micro-bar-wrap"><div class="micro-bar '+barClass+'" style="width:'+p+'%;background:'+m.color+'"></div></div>'+
+    '</div>';
+  });
+  el.innerHTML='<div class="micro-card"><h3>Micronutrients</h3><div class="micro-grid">'+grid+'</div>'+(hasMicros?'':'')
++'</div>';
 }
 
 function renderRemaining(){
@@ -1547,6 +1637,7 @@ function addSelected(mealKey) {
   toast(`Added ${food.name} to ${mealKey}`);
   renderMeals();
   renderSummary();
+  renderMicros();
   renderRemaining();
   saveTodayMeals();
 }
@@ -1633,7 +1724,7 @@ function confirmModal(){
   openMeals[mealKey]=true;
   closeModal();
   toast(`Added ${modalItem.name} to ${mealKey}`);
-  renderMeals();renderSummary();renderRemaining();saveTodayMeals();
+  renderMeals();renderSummary();renderMicros();renderRemaining();saveTodayMeals();
 }
 
 // ========== GOALS ==========
@@ -1645,7 +1736,7 @@ function saveGoals(){
   saveGoalsToStorage();
   saveTodayMeals();
   toast('Goals saved!');
-  renderSummary();renderRemaining();switchTab('tracker');
+  renderSummary();renderMicros();renderRemaining();switchTab('tracker');
 }
 
 
@@ -1717,6 +1808,26 @@ function renderTrends(){
     </div>
   </div>`;
 
+  // Micronutrient chart (show % of daily goal for each micro)
+  const hasMicroHistory=chartDates.some(d=>{
+    const t=history[d]?.totals||{};
+    return MICRO_KEYS.some(mk=>(t[mk]||0)>0);
+  });
+  if(hasMicroHistory){
+    html+=`<div class="chart-card">
+      <h4>Micronutrient Trends <span style="font-weight:400;font-size:.7rem;color:var(--text3)">(% of daily goal)</span></h4>
+      <div class="chart-wrap"><canvas id="microCanvas"></canvas></div>
+      <div class="chart-legend">
+        <span><span class="dot" style="background:${MICRO_META.fiber.color}"></span>Fiber</span>
+        <span><span class="dot" style="background:${MICRO_META.iron.color}"></span>Iron</span>
+        <span><span class="dot" style="background:${MICRO_META.calcium.color}"></span>Calcium</span>
+        <span><span class="dot" style="background:${MICRO_META.vitC.color}"></span>Vit C</span>
+        <span><span class="dot" style="background:${MICRO_META.vitD.color}"></span>Vit D</span>
+        <span><span class="dot" style="background:${MICRO_META.potassium.color}"></span>Potassium</span>
+      </div>
+    </div>`;
+  }
+
   // History table
   html+=`<div class="history-card"><h4>Daily Log</h4><table class="history-tbl">
     <tr><th>Date</th><th>Cal</th><th>Protein</th><th>Carbs</th><th>Fat</th><th>Items</th></tr>`;
@@ -1747,8 +1858,11 @@ function renderTrends(){
 
   el.innerHTML=html;
 
-  // Draw canvas chart
-  requestAnimationFrame(()=>drawTrendsChart(chartDates, history));
+  // Draw canvas charts
+  requestAnimationFrame(()=>{
+    drawTrendsChart(chartDates, history);
+    drawMicroChart(chartDates, history);
+  });
 }
 
 function drawTrendsChart(dates, history){
@@ -1843,6 +1957,99 @@ function drawTrendsChart(dates, history){
   ctx.fillText('protein goal',pad.left+4,proGoalY-4);
 }
 
+function drawMicroChart(dates, history){
+  const canvas=document.getElementById('microCanvas');
+  if(!canvas) return;
+  const ctx=canvas.getContext('2d');
+  const dpr=window.devicePixelRatio||1;
+  const rect=canvas.parentElement.getBoundingClientRect();
+  canvas.width=rect.width*dpr;
+  canvas.height=rect.height*dpr;
+  ctx.scale(dpr,dpr);
+  const W=rect.width, H=rect.height;
+  const pad={top:10,right:14,bottom:32,left:38};
+  const cW=W-pad.left-pad.right, cH=H-pad.top-pad.bottom;
+
+  if(dates.length<1) return;
+
+  // Show % of daily goal for select micros (skip sugar/sodium — less useful as goals)
+  const showKeys=['fiber','iron','calcium','vitC','vitD','potassium'];
+  const series={};
+  showKeys.forEach(mk=>{
+    series[mk]={data:[], color:MICRO_META[mk].color, name:MICRO_META[mk].name};
+  });
+
+  dates.forEach(d=>{
+    const t=history[d]?.totals||{};
+    showKeys.forEach(mk=>{
+      const val=t[mk]||0;
+      const goal=MICRO_META[mk].goal;
+      series[mk].data.push(goal>0?Math.round(val/goal*100):0);
+    });
+  });
+
+  // Max Y = highest % across all series, at least 100
+  let maxY=100;
+  Object.values(series).forEach(s=>s.data.forEach(v=>{if(v>maxY)maxY=v;}));
+  maxY=Math.ceil(maxY/25)*25;
+
+  // Draw grid
+  ctx.strokeStyle='#e5e3de';ctx.lineWidth=1;
+  const gridLines=4;
+  ctx.font='10px Inter, sans-serif';ctx.fillStyle='#999';ctx.textAlign='right';
+  for(let i=0;i<=gridLines;i++){
+    const y=pad.top+cH-cH*(i/gridLines);
+    ctx.beginPath();ctx.moveTo(pad.left,y);ctx.lineTo(W-pad.right,y);ctx.stroke();
+    ctx.fillText(Math.round(maxY*i/gridLines)+'%',pad.left-4,y+3);
+  }
+
+  // 100% goal line
+  if(maxY>100){
+    const goalY=pad.top+cH-cH*(100/maxY);
+    ctx.strokeStyle='#2d8e5e';ctx.lineWidth=1;ctx.setLineDash([6,4]);ctx.globalAlpha=0.35;
+    ctx.beginPath();ctx.moveTo(pad.left,goalY);ctx.lineTo(W-pad.right,goalY);ctx.stroke();
+    ctx.globalAlpha=1;ctx.setLineDash([]);
+    ctx.font='9px Inter, sans-serif';ctx.fillStyle='#2d8e5e';ctx.textAlign='left';
+    ctx.fillText('100% goal',pad.left+4,goalY-4);
+  }
+
+  // Date labels
+  ctx.textAlign='center';ctx.fillStyle='#999';ctx.font='10px Inter, sans-serif';
+  const maxLabels=Math.min(dates.length,10);
+  const step=Math.max(1,Math.floor(dates.length/maxLabels));
+  dates.forEach((d,i)=>{
+    if(i%step!==0&&i!==dates.length-1) return;
+    const x=pad.left+(dates.length>1?i/(dates.length-1):0.5)*cW;
+    const label=new Date(d+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    ctx.fillText(label,x,H-pad.bottom+18);
+  });
+
+  // Draw lines
+  function drawLine(data, color, dashed){
+    ctx.strokeStyle=color;ctx.lineWidth=2;ctx.lineJoin='round';ctx.lineCap='round';
+    if(dashed) ctx.setLineDash([4,4]); else ctx.setLineDash([]);
+    ctx.beginPath();
+    data.forEach((v,i)=>{
+      const x=pad.left+(dates.length>1?i/(dates.length-1):0.5)*cW;
+      const y=pad.top+cH-cH*(v/maxY);
+      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    });
+    ctx.stroke();
+    ctx.setLineDash([]);
+    data.forEach((v,i)=>{
+      const x=pad.left+(dates.length>1?i/(dates.length-1):0.5)*cW;
+      const y=pad.top+cH-cH*(v/maxY);
+      ctx.beginPath();ctx.arc(x,y,2.5,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();
+      ctx.beginPath();ctx.arc(x,y,1.2,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill();
+    });
+  }
+
+  const keys=Object.keys(series);
+  keys.forEach((mk,idx)=>{
+    drawLine(series[mk].data, series[mk].color, idx>=3);
+  });
+}
+
 function clearTodayData(){
   if(!confirm('Clear all of today\'s logged meals? This cannot be undone.')) return;
   meals=emptyMeals();
@@ -1900,11 +2107,18 @@ async function startScanner() {
   const onError = (msg) => { /* scanning, no match yet */ };
 
   const scanConfig = {
-    fps: 15,
+    fps: 20,
     qrbox: function(viewW, viewH) {
-      const w = Math.min(280, Math.floor(viewW * 0.85));
-      const h = Math.min(120, Math.floor(viewH * 0.4));
-      return { width: Math.max(150, w), height: Math.max(60, h) };
+      const w = Math.min(320, Math.floor(viewW * 0.9));
+      const h = Math.min(160, Math.floor(viewH * 0.45));
+      return { width: Math.max(200, w), height: Math.max(80, h) };
+    },
+    aspectRatio: 1.0,
+    videoConstraints: {
+      facingMode: 'environment',
+      width: { ideal: 1920 },
+      height: { ideal: 1080 },
+      focusMode: 'continuous'
     },
     formatsToSupport: [
       Html5QrcodeSupportedFormats.EAN_13,
@@ -1912,14 +2126,16 @@ async function startScanner() {
       Html5QrcodeSupportedFormats.UPC_A,
       Html5QrcodeSupportedFormats.UPC_E,
       Html5QrcodeSupportedFormats.CODE_128,
-      Html5QrcodeSupportedFormats.CODE_39
-    ]
+      Html5QrcodeSupportedFormats.CODE_39,
+      Html5QrcodeSupportedFormats.CODE_93
+    ],
+    experimentalFeatures: { useBarCodeDetectorIfSupported: true }
   };
 
   // Try back camera first, then any camera
   try {
     statusEl.textContent = 'Requesting camera access...';
-    await scannerInstance.start({ facingMode: 'environment' }, scanConfig, onSuccess, onError);
+    await scannerInstance.start({ facingMode: { exact: 'environment' } }, scanConfig, onSuccess, onError);
     statusEl.textContent = 'Scanning... hold the barcode steady in the box';
     return;
   } catch(e) {
@@ -2041,6 +2257,18 @@ async function lookupBarcode(barcode) {
   const carb = Math.round((n.carbohydrates_100g || 0) * 10) / 10;
   const fat = Math.round((n.fat_100g || 0) * 10) / 10;
 
+  // Micronutrients per 100g
+  const micro100 = {
+    fiber:     Math.round((n.fiber_100g || 0) * 10) / 10,
+    sugar:     Math.round((n.sugars_100g || 0) * 10) / 10,
+    sodium:    Math.round((n.sodium_100g || 0) * 1000),
+    iron:      Math.round((n.iron_100g || 0) * 10) / 10,
+    calcium:   Math.round((n.calcium_100g || 0) * 10) / 10,
+    vitC:      Math.round((n['vitamin-c_100g'] || 0) * 10) / 10,
+    vitD:      Math.round((n['vitamin-d_100g'] || 0) * 100) / 100,
+    potassium: Math.round((n.potassium_100g || 0) * 10) / 10
+  };
+
   const name = p.product_name || p.product_name_en || p.product_name_fr || 'Unknown product';
   const brand = p.brands || '';
   const servingSize = p.serving_size || '';
@@ -2052,6 +2280,7 @@ async function lookupBarcode(barcode) {
     shortName: name,
     brand,
     cal, pro, carb, fat,
+    micro100,
     servingSize,
     servingG,
     unit: 'g',
@@ -2146,12 +2375,21 @@ function addScannedFood() {
   const foodName = scannedProduct.shortName;
   const mealKey = scanMealKey;
 
+  // Compute micronutrients for this serving
+  var itemMicros = {};
+  if (scannedProduct.micro100) {
+    MICRO_KEYS.forEach(function(mk) {
+      itemMicros[mk] = Math.round((scannedProduct.micro100[mk] || 0) * f * 10) / 10;
+    });
+  }
+
   meals[mealKey].items.push({
     name: foodName,
     qty: Math.round(grams),
     unit: 'g',
     display,
     cal, pro, carb, fat,
+    ...itemMicros,
     barcode: scannedProduct.barcode
   });
 
@@ -2160,8 +2398,42 @@ function addScannedFood() {
   toast('Added ' + foodName + ' to ' + mealKey);
   renderMeals();
   renderSummary();
+  renderMicros();
   renderRemaining();
   saveTodayMeals();
+}
+
+
+// ========== SCAN FROM PHOTO ==========
+function scanFromPhoto(input) {
+  if (!input.files || !input.files[0]) return;
+  var file = input.files[0];
+  var statusEl = document.getElementById('scanStatus');
+  statusEl.textContent = 'Scanning image...';
+  statusEl.className = 'scan-status';
+
+  // Stop camera if running
+  stopScanner();
+
+  if (typeof Html5Qrcode === 'undefined') {
+    statusEl.textContent = 'Scanner library not loaded yet. Try again.';
+    statusEl.className = 'scan-status error';
+    return;
+  }
+
+  var photoScanner = new Html5Qrcode('scanReader');
+  photoScanner.scanFile(file, true).then(function(decodedText) {
+    statusEl.textContent = 'Barcode found: ' + decodedText + ' — looking up...';
+    lookupBarcode(decodedText);
+    photoScanner.clear().catch(function(){});
+  }).catch(function(err) {
+    statusEl.textContent = 'No barcode found in image. Try a clearer photo or enter manually.';
+    statusEl.className = 'scan-status error';
+    photoScanner.clear().catch(function(){});
+  });
+
+  // Reset input so same file can be selected again
+  input.value = '';
 }
 
 // ========== SERVICE WORKER ==========
@@ -2173,8 +2445,31 @@ if ('serviceWorker' in navigator) {
   });
 }
 
+// ========== MIGRATION: UTC→local date keys ==========
+(function migrateUTCKeys(){
+  try{
+    const store=JSON.parse(localStorage.getItem(STORE_KEY))||{};
+    const localToday=todayKey();
+    // Check if today's key has data that was NOT saved with a 'savedAt' timestamp
+    // (meaning it was saved by the old UTC-based todayKey before this fix)
+    if(store[localToday] && !store[localToday].savedAt){
+      // Move it to yesterday's key (the actual local date when it was entered)
+      const d=new Date(); d.setDate(d.getDate()-1);
+      const yesterdayKey=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+      if(!store[yesterdayKey]){
+        store[yesterdayKey]=store[localToday];
+        delete store[localToday];
+        localStorage.setItem(STORE_KEY, JSON.stringify(store));
+        // Reload meals (now today is empty)
+        meals=loadTodayMeals();
+      }
+    }
+  }catch(e){}
+})();
+
 // ========== INIT ==========
 renderSummary();
+renderMicros();
 renderRemaining();
 renderMeals();
 renderReference();
