@@ -219,12 +219,12 @@ header p{font-size:.8rem;opacity:.8;margin-top:2px}
 .scan-btn:hover{background:var(--accent-light);border-color:var(--accent)}
 .scan-btn svg{width:16px;height:16px}
 .scan-modal-bg{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);display:flex;align-items:flex-start;justify-content:center;z-index:300;padding:16px;overflow-y:auto;-webkit-overflow-scrolling:touch}
-.scan-modal{background:#fff;border-radius:16px;padding:20px;max-width:420px;width:100%;box-shadow:0 8px 40px rgba(0,0,0,.2);margin:auto 0}
-.scan-modal h3{font-size:1rem;font-weight:700;margin-bottom:4px}
-.scan-modal .scan-sub{font-size:.78rem;color:var(--text3);margin-bottom:14px}
-#scanReader{width:100%;max-height:220px;border-radius:10px;overflow:hidden;margin-bottom:12px}
-#scanReader video{border-radius:10px;max-height:220px;object-fit:cover}
-.scan-status{font-size:.82rem;color:var(--text2);text-align:center;padding:8px 0}
+.scan-modal{background:#fff;border-radius:16px;padding:16px;max-width:420px;width:100%;box-shadow:0 8px 40px rgba(0,0,0,.2);margin:auto 0}
+.scan-modal h3{font-size:1rem;font-weight:700;margin-bottom:2px}
+.scan-modal .scan-sub{font-size:.78rem;color:var(--text3);margin-bottom:10px}
+#scanReader{width:100%;max-height:150px;border-radius:10px;overflow:hidden;margin-bottom:8px}
+#scanReader video{border-radius:10px;max-height:150px;object-fit:cover}
+.scan-status{font-size:.82rem;color:var(--text2);text-align:center;padding:4px 0}
 .scan-status.error{color:var(--red)}
 .scan-result-card{background:var(--accent-light);border-radius:12px;padding:16px;margin-bottom:12px}
 .scan-result-card h4{font-size:.9rem;font-weight:700;margin-bottom:4px}
@@ -233,7 +233,7 @@ header p{font-size:.8rem;opacity:.8;margin-top:2px}
 .scan-result-macros .srm{padding:6px 4px;border-radius:8px;background:rgba(255,255,255,.7)}
 .scan-result-macros .srm-label{font-size:.62rem;text-transform:uppercase;letter-spacing:.3px;color:var(--text3)}
 .scan-result-macros .srm-val{font-weight:700;font-size:.95rem;margin-top:2px}
-.scan-or{text-align:center;font-size:.78rem;color:var(--text3);margin:10px 0;display:flex;align-items:center;gap:10px}
+.scan-or{text-align:center;font-size:.78rem;color:var(--text3);margin:6px 0;display:flex;align-items:center;gap:10px}
 .scan-or::before,.scan-or::after{content:'';flex:1;height:1px;background:var(--border)}
 .manual-barcode{display:flex;gap:8px}
 .manual-barcode input{flex:1;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:.85rem;font-family:inherit;outline:0}
@@ -259,8 +259,8 @@ header p{font-size:.8rem;opacity:.8;margin-top:2px}
 .micro-note{font-size:.68rem;color:var(--text3);margin-top:10px;font-style:italic}
 
 /* Scan from photo */
-.scan-photo-row{display:flex;gap:8px;margin-top:10px}
-.scan-photo-btn{flex:1;padding:10px;background:var(--accent-light);color:var(--accent);border:1.5px dashed var(--accent);border-radius:10px;font-size:.78rem;font-weight:600;cursor:pointer;font-family:inherit;text-align:center;transition:.2s}
+.scan-photo-row{display:flex;gap:8px;margin-top:6px}
+.scan-photo-btn{flex:1;padding:8px;background:var(--accent-light);color:var(--accent);border:1.5px dashed var(--accent);border-radius:10px;font-size:.78rem;font-weight:600;cursor:pointer;font-family:inherit;text-align:center;transition:.2s}
 .scan-photo-btn:hover{background:var(--accent);color:#fff}
 .scan-photo-input{display:none}
 
@@ -2177,9 +2177,9 @@ async function startScanner() {
   const scanConfig = {
     fps: 20,
     qrbox: function(viewW, viewH) {
-      const w = Math.min(320, Math.floor(viewW * 0.9));
-      const h = Math.min(160, Math.floor(viewH * 0.45));
-      return { width: Math.max(200, w), height: Math.max(80, h) };
+      const w = Math.min(280, Math.floor(viewW * 0.85));
+      const h = Math.min(120, Math.floor(viewH * 0.4));
+      return { width: Math.max(180, w), height: Math.max(60, h) };
     },
     aspectRatio: 1.0,
     videoConstraints: {
