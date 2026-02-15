@@ -30,6 +30,14 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 header{background:linear-gradient(135deg,#5b6abf,#7b6bc7);color:#fff;padding:26px 20px 22px;padding-top:calc(26px + env(safe-area-inset-top));text-align:center}
 header h1{font-size:1.5rem;font-weight:800;letter-spacing:-0.5px}
 header p{font-size:.8rem;opacity:.8;margin-top:2px}
+.date-nav{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:6px}
+.date-nav-btn{background:rgba(255,255,255,.2);border:none;color:#fff;width:32px;height:32px;border-radius:50%;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.2s}
+.date-nav-btn:hover:not(:disabled){background:rgba(255,255,255,.35)}
+.date-nav-btn:disabled{opacity:.3;cursor:default}
+.date-nav-label{font-size:.82rem;opacity:.85;min-width:180px;text-align:center}
+.past-date-banner{display:none;align-items:center;justify-content:center;gap:10px;background:linear-gradient(135deg,#d97a2a,#e89540);color:#fff;padding:10px 16px;border-radius:10px;margin-bottom:14px;font-size:.82rem;box-shadow:var(--shadow)}
+.back-today-btn{background:rgba(255,255,255,.25);border:none;color:#fff;padding:5px 12px;border-radius:6px;font-size:.75rem;font-weight:600;cursor:pointer;font-family:inherit}
+.back-today-btn:hover{background:rgba(255,255,255,.4)}
 .container{max-width:660px;margin:0 auto;padding:0 14px 60px}
 
 /* Tabs */
@@ -189,6 +197,8 @@ header p{font-size:.8rem;opacity:.8;margin-top:2px}
 .history-tbl th{text-align:left;font-size:.62rem;text-transform:uppercase;letter-spacing:.4px;color:var(--text3);padding:6px;border-bottom:2px solid var(--border)}
 .history-tbl td{padding:8px 6px;border-bottom:1px solid var(--border)}
 .history-tbl tr:last-child td{border-bottom:0}
+.history-row{cursor:pointer;transition:background .15s}
+.history-row:hover{background:var(--accent-light)}
 .history-tbl .hi-pro{color:var(--green);font-weight:700}
 .history-tbl .hi-cal{color:var(--accent);font-weight:600}
 .range-btns{display:flex;gap:4px;margin-bottom:14px}
@@ -263,10 +273,15 @@ header p{font-size:.8rem;opacity:.8;margin-top:2px}
 
 <header>
   <h1>Macro Tracker</h1>
-  <p id="dateDisplay"></p>
+  <div class="date-nav">
+    <button class="date-nav-btn" id="navPrev" onclick="navigateDate(-1)" aria-label="Previous day">&#8249;</button>
+    <span class="date-nav-label" id="dateDisplay"></span>
+    <button class="date-nav-btn" id="navNext" onclick="navigateDate(1)" aria-label="Next day" disabled>&#8250;</button>
+  </div>
 </header>
 
 <div class="container">
+  <div id="pastDateBanner" class="past-date-banner"></div>
   <div class="tabs">
     <button class="tab active" onclick="switchTab('tracker')">Tracker</button>
     <button class="tab" onclick="switchTab('reference')">Protein Guide</button>
@@ -1179,6 +1194,90 @@ function todayKey(){
   return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 }
 
+function dateKeyToDate(key){
+  const parts=key.split('-');
+  return new Date(+parts[0], +parts[1]-1, +parts[2]);
+}
+function formatDateDisplay(key){
+  const d=dateKeyToDate(key);
+  return d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+}
+function shiftDate(key, delta){
+  const d=dateKeyToDate(key);
+  d.setDate(d.getDate()+delta);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function isToday(key){ return key===todayKey(); }
+function loadMealsForDate(dateKey){
+  try{
+    const store=JSON.parse(localStorage.getItem(STORE_KEY))||{};
+    const day=store[dateKey];
+    if(day&&day.meals){
+      const m=emptyMeals();
+      for(const k of Object.keys(m)){
+        if(day.meals[k]) m[k].items=day.meals[k];
+      }
+      return m;
+    }
+  }catch(e){}
+  return emptyMeals();
+}
+function saveMealsForDate(dateKey){
+  try{
+    const store=JSON.parse(localStorage.getItem(STORE_KEY))||{};
+    const t=getDayTotals();
+    MICRO_KEYS.forEach(function(mk){ if(!t[mk]) t[mk]=0; });
+    store[dateKey]={
+      meals:{
+        breakfast:meals.breakfast.items,
+        lunch:meals.lunch.items,
+        dinner:meals.dinner.items,
+        snacks:meals.snacks.items
+      },
+      totals:t,
+      goals:{...goals},
+      savedAt:dateKey,
+      saved:new Date().toISOString()
+    };
+    localStorage.setItem(STORE_KEY, JSON.stringify(store));
+  }catch(e){ console.warn('Could not save to localStorage', e); }
+}
+function navigateDate(delta){
+  const newDate=shiftDate(viewDate, delta);
+  // Don't navigate into the future
+  if(newDate>todayKey()) return;
+  setViewDate(newDate);
+}
+function setViewDate(dateKey){
+  if(dateKey>todayKey()) return;
+  viewDate=dateKey;
+  meals=loadMealsForDate(viewDate);
+  openMeals={breakfast:true,lunch:false,dinner:false,snacks:false};
+  selectedFoods={};
+  updateDateDisplay();
+  renderSummary();renderMicros();renderRemaining();renderMeals();
+}
+function goToToday(){
+  setViewDate(todayKey());
+}
+function editDay(dateKey){
+  setViewDate(dateKey);
+  switchTab('tracker');
+}
+function updateDateDisplay(){
+  document.getElementById('dateDisplay').textContent=formatDateDisplay(viewDate);
+  const banner=document.getElementById('pastDateBanner');
+  if(isToday(viewDate)){
+    banner.style.display='none';
+    document.getElementById('navNext').disabled=true;
+  } else {
+    const label=dateKeyToDate(viewDate).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+    banner.innerHTML='Editing <strong>'+label+'</strong> <button class="back-today-btn" onclick="goToToday()">Back to Today</button>';
+    banner.style.display='flex';
+    document.getElementById('navNext').disabled=false;
+  }
+}
+
 function loadGoals(){
   try{ const g=JSON.parse(localStorage.getItem(GOALS_KEY)); if(g&&g.cal) return g; } catch(e){}
   return {cal:2200,pro:150,carb:250,fat:70};
@@ -1194,49 +1293,16 @@ function emptyMeals(){
   };
 }
 
-function loadTodayMeals(){
-  try{
-    const store=JSON.parse(localStorage.getItem(STORE_KEY))||{};
-    const today=store[todayKey()];
-    if(today&&today.meals){
-      const m=emptyMeals();
-      for(const k of Object.keys(m)){
-        if(today.meals[k]) m[k].items=today.meals[k];
-      }
-      return m;
-    }
-  }catch(e){}
-  return emptyMeals();
-}
+function loadTodayMeals(){ return loadMealsForDate(viewDate); }
 
-function saveTodayMeals(){
-  try{
-    const store=JSON.parse(localStorage.getItem(STORE_KEY))||{};
-    const key=todayKey();
-    const t=getDayTotals();
-    // Include micronutrients in totals
-    MICRO_KEYS.forEach(function(mk){ if(!t[mk]) t[mk]=0; });
-    store[key]={
-      meals:{
-        breakfast:meals.breakfast.items,
-        lunch:meals.lunch.items,
-        dinner:meals.dinner.items,
-        snacks:meals.snacks.items
-      },
-      totals:t,
-      goals:{...goals},
-      savedAt:todayKey(),
-      saved:new Date().toISOString()
-    };
-    localStorage.setItem(STORE_KEY, JSON.stringify(store));
-  }catch(e){ console.warn('Could not save to localStorage', e); }
-}
+function saveTodayMeals(){ saveMealsForDate(viewDate); }
 
 function getHistory(){
   try{ return JSON.parse(localStorage.getItem(STORE_KEY))||{}; }catch(e){ return {}; }
 }
 
 let goals = loadGoals();
+let viewDate = todayKey();
 let meals = loadTodayMeals();
 let openMeals = {breakfast:true,lunch:false,dinner:false,snacks:false};
 let modalItem = null;
@@ -1259,7 +1325,7 @@ function emptyMicros(){ return {fiber:0,sugar:0,sodium:0,iron:0,calcium:0,vitC:0
 
 // ========== DATE ==========
 const today = new Date();
-document.getElementById('dateDisplay').textContent = today.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+updateDateDisplay();
 
 // ========== UTILS ==========
 function pct(v,g){return g>0?Math.min(100,Math.round(v/g*100)):0}
@@ -1316,8 +1382,9 @@ function searchFoods(query) {
 // ========== RENDER ==========
 function renderSummary(){
   const t=getDayTotals();
+  const dateLabel=isToday(viewDate)?'Today\'s Macros':dateKeyToDate(viewDate).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})+' Macros';
   document.getElementById('summaryCard').innerHTML=`
-    <h3>Today's Macros</h3>
+    <h3>${dateLabel}</h3>
     <div class="macro-grid">
       <div class="macro-card cal-card">
         <div class="macro-label cal-label">Calories</div>
@@ -1379,7 +1446,7 @@ function renderRemaining(){
   const banner=document.getElementById('remainingBanner');
 
   if(allDone&&t.cal>0){
-    banner.innerHTML=`<div class="remaining-banner" style="border-left-color:var(--accent)"><h4 style="color:var(--accent)">All daily goals reached!</h4><p style="font-size:.82rem;color:var(--text2)">Great job hitting your targets today.</p></div>`;
+    banner.innerHTML=`<div class="remaining-banner" style="border-left-color:var(--accent)"><h4 style="color:var(--accent)">All daily goals reached!</h4><p style="font-size:.82rem;color:var(--text2)">Great job hitting your targets${isToday(viewDate)?' today':''}.</p></div>`;
     return;
   }
   if(t.cal===0){
@@ -1401,7 +1468,7 @@ function renderRemaining(){
 
   banner.innerHTML=`
     <div class="remaining-banner">
-      <h4>Still needed today</h4>
+      <h4>${isToday(viewDate)?'Still needed today':'Remaining for the day'}</h4>
       <div class="remaining-row">
         <div class="remaining-item"><div class="remaining-dot" style="background:var(--accent)"></div><span class="remaining-val">${rem.cal}</span><span class="remaining-unit">kcal</span></div>
         <div class="remaining-item"><div class="remaining-dot" style="background:var(--green)"></div><span class="remaining-val">${rem.pro}g</span><span class="remaining-unit">protein</span></div>
@@ -1660,7 +1727,7 @@ document.addEventListener('click', e => {
 
 // ========== MEAL ACTIONS ==========
 function toggleMeal(k){openMeals[k]=!openMeals[k];renderMeals()}
-function removeItem(k,i){meals[k].items.splice(i,1);renderMeals();renderSummary();renderRemaining();saveTodayMeals()}
+function removeItem(k,i){meals[k].items.splice(i,1);renderMeals();renderSummary();renderMicros();renderRemaining();saveTodayMeals()}
 
 // ========== MODAL (for quick-add from reference/suggestions) ==========
 function openModalForFood(food, qty) {
@@ -1829,7 +1896,7 @@ function renderTrends(){
   }
 
   // History table
-  html+=`<div class="history-card"><h4>Daily Log</h4><table class="history-tbl">
+  html+=`<div class="history-card"><h4>Daily Log</h4><p style="font-size:.72rem;color:var(--text3);margin:-2px 0 10px">Tap a row to view &amp; edit that day</p><table class="history-tbl">
     <tr><th>Date</th><th>Cal</th><th>Protein</th><th>Carbs</th><th>Fat</th><th>Items</th></tr>`;
   rangeDates.forEach(d=>{
     const t=history[d].totals||{cal:0,pro:0,carb:0,fat:0};
@@ -1841,9 +1908,9 @@ function renderTrends(){
     const carbPct=g.carb>0?Math.round(t.carb/g.carb*100):0;
     const fatPct=g.fat>0?Math.round(t.fat/g.fat*100):0;
     const dateLabel=new Date(d+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
-    const isToday=d===todayKey();
-    html+=`<tr${isToday?' style="font-weight:600"':''}>
-      <td>${isToday?'Today':dateLabel}</td>
+    const isTodayRow=d===todayKey();
+    html+=`<tr class="history-row" style="${isTodayRow?'font-weight:600':''}" onclick="editDay('${d}')">
+      <td>${isTodayRow?'Today':dateLabel}</td>
       <td class="hi-cal">${t.cal} <span style="font-size:.68rem;color:var(--text3)">(${calPct}%)</span></td>
       <td class="hi-pro">${t.pro}g <span style="font-size:.68rem;color:var(--text3)">(${proPct}%)</span></td>
       <td>${t.carb}g <span style="font-size:.68rem;color:var(--text3)">(${carbPct}%)</span></td>
@@ -2051,13 +2118,14 @@ function drawMicroChart(dates, history){
 }
 
 function clearTodayData(){
-  if(!confirm('Clear all of today\'s logged meals? This cannot be undone.')) return;
+  const label=isToday(viewDate)?'today\'s':dateKeyToDate(viewDate).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})+'\'s';
+  if(!confirm('Clear all of '+label+' logged meals? This cannot be undone.')) return;
   meals=emptyMeals();
   const store=getHistory();
-  delete store[todayKey()];
+  delete store[viewDate];
   localStorage.setItem(STORE_KEY, JSON.stringify(store));
-  renderMeals();renderSummary();renderRemaining();
-  toast('Today\'s data cleared');
+  renderMeals();renderSummary();renderMicros();renderRemaining();
+  toast(isToday(viewDate)?'Today\'s data cleared':'Data cleared');
   renderTrends();
 }
 
