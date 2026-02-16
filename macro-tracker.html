@@ -1244,6 +1244,24 @@ const MICRO_META = {
   potassium: {name:'Potassium', unit:'mg', goal:3400, color:'#5e6a8e'}
 };
 function emptyMicros(){ return {fiber:0,sugar:0,sodium:0,iron:0,calcium:0,vitC:0,vitD:0,potassium:0}; }
+function roundTo(v, d){
+  const f = Math.pow(10, d);
+  return Math.round((Number(v) + Number.EPSILON) * f) / f;
+}
+function displayMicroDecimals(key){
+  if (key === 'vitD') return 2;
+  if (key === 'sodium' || key === 'calcium' || key === 'potassium') return 0;
+  return 1;
+}
+function formatMicroValue(key, value){
+  const n = Number(value) || 0;
+  const d = displayMicroDecimals(key);
+  const min = 1 / Math.pow(10, d);
+  if (n > 0 && n < min) return '<' + min.toFixed(d);
+  const rounded = roundTo(n, d);
+  if (d === 0) return String(rounded);
+  return rounded.toFixed(d).replace(/\.0+$/, '').replace(/(\.\d*[1-9])0+$/, '$1');
+}
 
 
 // ========== DATE ==========
@@ -1267,7 +1285,7 @@ function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t
 function calcFromDB(food,qty){
   const f=qty/100;
   const result={cal:r(food.cal*f),pro:r(food.pro*f),carb:r(food.carb*f),fat:r(food.fat*f)};
-  MICRO_KEYS.forEach(mk=>{ if(food[mk]!==undefined) result[mk]=Math.round(food[mk]*f*10)/10; });
+  MICRO_KEYS.forEach(mk=>{ if(food[mk]!==undefined) result[mk]=roundTo(food[mk]*f,3); });
   return result;
 }
 
@@ -1347,10 +1365,11 @@ function renderMicros(){
   let grid='';
   MICRO_KEYS.forEach(k=>{
     const m=MICRO_META[k];
-    const val=Math.round(t[k]*10)/10;
-    if(val===0) return;
-    const p=m.goal>0?Math.min(100,Math.round(val/m.goal*100)):0;
-    const barClass=p>=80?'good':p>=150?'over':'';
+    const rawVal=Number(t[k]) || 0;
+    if(rawVal<=0) return;
+    const val=formatMicroValue(k, rawVal);
+    const p=m.goal>0?Math.min(100,Math.round(rawVal/m.goal*100)):0;
+    const barClass=p>=150?'over':p>=80?'good':'';
     grid+='<div class="micro-item">'+
       '<div class="mi-top"><span class="mi-name">'+m.name+'</span><span class="mi-val" style="color:'+m.color+'">'+val+m.unit+'</span></div>'+
       '<div class="mi-goal">'+p+'% of '+m.goal+m.unit+'</div>'+
@@ -1649,7 +1668,7 @@ document.addEventListener('click', e => {
 
 // ========== MEAL ACTIONS ==========
 function toggleMeal(k){openMeals[k]=!openMeals[k];renderMeals()}
-function removeItem(k,i){meals[k].items.splice(i,1);renderMeals();renderSummary();renderRemaining();saveTodayMeals()}
+function removeItem(k,i){meals[k].items.splice(i,1);renderMeals();renderSummary();renderMicros();renderRemaining();saveTodayMeals()}
 
 // ========== MODAL (for quick-add from reference/suggestions) ==========
 function openModalForFood(food, qty) {
@@ -2045,7 +2064,7 @@ function clearTodayData(){
   const store=getHistory();
   delete store[todayKey()];
   localStorage.setItem(STORE_KEY, JSON.stringify(store));
-  renderMeals();renderSummary();renderRemaining();
+  renderMeals();renderSummary();renderMicros();renderRemaining();
   toast('Today\'s data cleared');
   renderTrends();
 }
@@ -2165,21 +2184,53 @@ function lookupManualBarcode() {
 }
 
 async function fetchWithFallback(url) {
-  // 1) Try fetch directly (works from http:// origins)
-  try {
-    const controller = new AbortController();
-    const timer = setTimeout(function(){ controller.abort(); }, 6000);
-    const resp = await fetch(url, { signal: controller.signal });
-    clearTimeout(timer);
-    if (resp.ok) return await resp.json();
-  } catch(e) { /* fetch blocked from file://, fall through */ }
+  const fallbackUrl = url.replace('/api/v2/product/', '/api/v0/product/');
+  const attempts = [
+    { label: 'direct-v2', url: url },
+    { label: 'direct-v0', url: fallbackUrl },
+    { label: 'allorigins-raw', url: 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url) },
+    { label: 'allorigins-get', url: 'https://api.allorigins.win/get?url=' + encodeURIComponent(url), unwrapContents: true },
+    { label: 'allorigins-get-v0', url: 'https://api.allorigins.win/get?url=' + encodeURIComponent(fallbackUrl), unwrapContents: true },
+    { label: 'corsproxy', url: 'https://corsproxy.io/?' + encodeURIComponent(url) }
+  ];
+  const errors = [];
 
-  // 2) JSONP via allorigins.win <script> tag (works from file://)
+  for (const attempt of attempts) {
+    try {
+      const data = await fetchJson(attempt.url, 8000);
+      if (attempt.unwrapContents) {
+        if (data && data.contents) return JSON.parse(data.contents);
+        throw new Error('Proxy returned no contents');
+      }
+      if (data) return data;
+    } catch (e) {
+      errors.push(attempt.label + ': ' + (e && e.message ? e.message : String(e)));
+    }
+  }
+
+  // Final fallback for restrictive origins: JSONP via script tag.
   try {
     return await fetchViaJSONP(url);
-  } catch(e) { /* JSONP failed too */ }
+  } catch (e) {
+    errors.push('jsonp: ' + (e && e.message ? e.message : String(e)));
+  }
 
+  console.warn('Open Food Facts lookup failed', errors);
   return null;
+}
+
+async function fetchJson(url, timeoutMs) {
+  const controller = new AbortController();
+  const timer = setTimeout(function(){ controller.abort(); }, timeoutMs);
+  try {
+    const resp = await fetch(url, { signal: controller.signal, cache: 'no-store' });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const text = await resp.text();
+    if (!text) throw new Error('Empty response');
+    return JSON.parse(text);
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 function fetchViaJSONP(url) {
@@ -2226,7 +2277,7 @@ async function lookupBarcode(barcode) {
   const data = await fetchWithFallback(url);
 
   if (!data) {
-    statusEl.textContent = 'Could not reach Open Food Facts. Check your internet connection.';
+    statusEl.textContent = 'Could not reach Open Food Facts right now. Please check your connection and try again.';
     statusEl.className = 'scan-status error';
     return;
   }
@@ -2368,7 +2419,7 @@ function addScannedFood() {
   var itemMicros = {};
   if (scannedProduct.micro100) {
     MICRO_KEYS.forEach(function(mk) {
-      itemMicros[mk] = Math.round((scannedProduct.micro100[mk] || 0) * f * 10) / 10;
+      itemMicros[mk] = roundTo((scannedProduct.micro100[mk] || 0) * f, 3);
     });
   }
 
