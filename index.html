@@ -1426,7 +1426,6 @@ function renderMicros(){
   MICRO_KEYS.forEach(k=>{
     const m=MICRO_META[k];
     const val=Math.round(t[k]*10)/10;
-    if(val===0) return;
     const p=m.goal>0?Math.min(100,Math.round(val/m.goal*100)):0;
     const barClass=p>=80?'good':p>=150?'over':'';
     grid+='<div class="micro-item">'+
